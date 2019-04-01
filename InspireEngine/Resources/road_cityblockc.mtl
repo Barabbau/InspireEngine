@@ -1,0 +1,132 @@
+#
+#
+#
+
+newmtl ROAD_CityBlockC Mesh_Mat_1way4lane
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_2w-dbl.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_1way4laneN
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_1w-dbl.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_1way4lanesND
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_1w-dbl.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_2ways2lane
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_2w-dbl.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_2ways2laneN
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 102400.000000
+map_Kd maps\RD_2w-dbl.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_2ways4Lane
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 102400.000000
+map_Kd maps\RD_2w-dbl.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_Concrete
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_Inter.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_CrossRoad
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 102400.000000
+map_Kd maps\RD_Crossing.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_Crossing
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_2w-dbl-stp.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_GroundGrass
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\GD_Grass02.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_GroundTile1
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\GD_paver01.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_GroundTile2
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\GD_paver02.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_GroundTile4
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\GD_paver03.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_GroundTile6
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\GD_paver06.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_GroundTile7
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\GD_paver07.dds
+
+newmtl ROAD_CityBlockC Mesh_Mat_SideWalk
+illum 2
+Ka 0.500000 0.500000 0.500000
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
+Ns 2.000000
+map_Kd maps\RD_sidewalk01-DIF.dds
+

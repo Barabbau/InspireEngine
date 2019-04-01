@@ -1,0 +1,22 @@
+﻿  Camera.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\camera.h(5): fatal error C1083: Cannot open include file: 'xnamath.h': No such file or directory
+  DXShaderManager.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\dxshadermanager.h(5): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  EditorMesh.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\editormesh.h(4): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  InspireUtils.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\inspireutils.h(10): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  main.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\main.cpp(16): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  Mesh.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\mesh.h(10): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  MeshDX.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\meshdx.h(10): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  EditorMeshInstanced.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\editormeshinstanced.h(4): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  DXShader.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\dxshader.h(6): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  SpawnPoint.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\spawnpoint.h(4): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
+  SurfaceMaterial.cpp
+c:\users\black\source\repos\inspireengine\inspireengine\dxshader.h(6): fatal error C1083: Cannot open include file: 'd3dx11.h': No such file or directory
