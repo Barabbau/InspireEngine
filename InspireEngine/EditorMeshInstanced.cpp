@@ -186,15 +186,14 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 	{
 		case 0:
 		{
-			float scale = 1.0f;
 			this->_meshDx->Draw(
 				this->_d3d11DevCon, 
 				viewProjection,
 				this->_materialsList, 
 				this->_shaderManager,
-				XMFLOAT3( 0.0f, 0.0f, 0.0f ),
-				XMFLOAT3( 0.0f, 0.5f, 0.0f ),
-				XMFLOAT3( scale, scale, scale ),
+				this->rotation,
+				this->position,
+				this->scale,
 //				listM,//this->_transforms->at( index ),
 //				amount, 
 				this->_light );

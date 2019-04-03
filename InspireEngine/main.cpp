@@ -1043,9 +1043,9 @@ bool InitScene( )
 
 	XMFLOAT3 minPoint;
 	XMFLOAT3 maxPoint;
-	XMFLOAT3 pos = XMFLOAT3( 0.0f, 0.0f, 0.0f );
+	XMFLOAT3 pos = XMFLOAT3( 0.0f, 0.5f, 0.0f );
 	XMFLOAT3 rot = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	XMFLOAT3 scale = XMFLOAT3( 0.1f, 0.1f, 0.1f );
+	XMFLOAT3 scale = XMFLOAT3( 1.0f, 1.0f, 1.0f );
 	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
 											*d3d11Device,
 											"Building_11stores_Pyramid.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
@@ -1413,7 +1413,7 @@ void DrawSceneOld( )
 	editorMeshInstanced->RenderInstanced( ( VP ) );
 	//////////////////////////////////////////////////////////////////
 
-	/*
+	
 	//////////////////////////////////////////////////////////////////
 	/////Draw the Sky's Sphere//////
 	//Set the spheres index buffer
@@ -1422,10 +1422,10 @@ void DrawSceneOld( )
 	d3d11DevCon->IASetVertexBuffers( 0, 1, &sphereVertBuffer, &stride, &offset );
 
 	//Set the WVP matrix and send it to the constant buffer in effect file
-	WVP = sphereWorld * _camera.CamView * _camera.CamProjection;
-	_shaderManager.cbPerObj.WVP = XMMatrixTranspose( WVP );
-	_shaderManager.cbPerObj.World = XMMatrixTranspose( sphereWorld );
-	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager.cbPerObj, 0, 0 );
+	WVP = sphereWorld * _camera->CamView * _camera->CamProjection;
+	_shaderManager->cbPerObj.WVP = XMMatrixTranspose( WVP );
+	_shaderManager->cbPerObj.World = XMMatrixTranspose( sphereWorld );
+	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
 	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
 	//Send our skymap resource view to pixel shader
 	d3d11DevCon->PSSetShaderResources( 0, 1, &smrv );
@@ -1441,13 +1441,13 @@ void DrawSceneOld( )
 	d3d11DevCon->DrawIndexed( NumSphereFaces * 3, 0, 0 );
 	
 	//Set the default VS, PS shaders and depth/stencil state
-	d3d11DevCon->VSSetShader( _shaderManager._stdShader->VS, 0, 0 );
-	d3d11DevCon->PSSetShader( _shaderManager._stdShader->PS, 0, 0 );
-	d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
+	//d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
+	//d3d11DevCon->PSSetShader( _shaderManager->_stdShader->PS, 0, 0 );
+	//d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
 	//////////////////////////////////////////////////////////////////
 
 
-	*/
+	
 	///////////////**************new**************////////////////////	
 	//Draw our model's TRANSPARENT subsets now
 
