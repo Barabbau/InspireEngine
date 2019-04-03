@@ -252,7 +252,7 @@ bool InspireUtils::ObjRead(
 					v >> y;
 					v >> z;
 
-					vert = XMFLOAT3( x, y, z );
+					vert = XMFLOAT3( -x, y, z );
 					object3D->vertices.push_back( vert );
 
 					// Calculate mix and max for the bounding box
@@ -300,7 +300,7 @@ bool InspireUtils::ObjRead(
 					v >> x;
 					v >> y;
 
-					uv = XMFLOAT2( x, y );
+					uv = XMFLOAT2( x, 1 - y );
 					object3D->uvs.push_back( uv );
 
 					continue;
@@ -345,9 +345,9 @@ bool InspireUtils::ObjRead(
 
 					std::istringstream v( line.substr( 2 ) );
 					std::vector<std::string> partsLists = split( v.str( ), ' ' );
-					std::vector<std::string> partsIndexesA = split( partsLists[ 0 ], '/' );
+					std::vector<std::string> partsIndexesA = split( partsLists[ 2 ], '/' );
 					std::vector<std::string> partsIndexesB = split( partsLists[ 1 ], '/' );
-					std::vector<std::string> partsIndexesC = split( partsLists[ 2 ], '/' );
+					std::vector<std::string> partsIndexesC = split( partsLists[ 0 ], '/' );
 
 					int a, b, c;
 

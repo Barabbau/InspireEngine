@@ -160,7 +160,8 @@ double frameTime;
 
 
 
-Camera _camera;
+//std::shared_ptr<Camera>
+Camera* _camera;
 DXShader* _skyShader;
 Mesh _mesh;
 
@@ -202,7 +203,7 @@ LRESULT CALLBACK WndProc( HWND hWnd,
 
 std::vector<SurfaceMaterial> material;
 
-Light light;
+Light* _light;
 
 cbPerFrame constbuffPerFrame;
 
@@ -565,14 +566,14 @@ void DetectInput( double time )
 	}
 	if ( ( mouseCurrState.lX != mouseLastState.lX ) || ( mouseCurrState.lY != mouseLastState.lY ) )
 	{
-		_camera.CamYaw += mouseLastState.lX * 0.001f;
+		_camera->CamYaw += mouseLastState.lX * 0.001f;
 
-		_camera.CamPitch += mouseCurrState.lY * 0.001f;
+		_camera->CamPitch += mouseCurrState.lY * 0.001f;
 
 		mouseLastState = mouseCurrState;
 	}
 
-	_camera.Update( moveLeftRight, moveBackForward );
+	_camera->Update( moveLeftRight, moveBackForward );
 
 	moveLeftRight = 0.0f;
 	moveBackForward = 0.0f;
@@ -899,11 +900,11 @@ void InitD2DScreenTexture( )
 
 typedef std::shared_ptr<EditorMesh> EditorMeshPtr;
 
-DXShaderManager _shaderManager;
+DXShaderManager* _shaderManager;
 std::vector<SurfaceMaterial> _materialsList;
 EditorMeshInstanced* editorMeshInstanced;
 std::vector<EditorMeshPtr> *_lstEditorObject3Ds;
-InspireUtils* inspireUtils;
+InspireUtils* _inspireUtils;
 //_lstEditorObject3Ds = new std::vector<EditorMesh*>( );
 bool InitScene( )
 {
@@ -911,34 +912,17 @@ bool InitScene( )
 
 	CreateSphere( 10, 10 );
 
-	inspireUtils = &InspireUtils( );
+	_inspireUtils = &InspireUtils( );
 	 _materialsList = std::vector<SurfaceMaterial>();
 	 _lstEditorObject3Ds = new std::vector<EditorMeshPtr>();
 
-	_shaderManager = DXShaderManager( *d3d11Device );
-	_shaderManager._stdShader = new DXShader( "VS", "PS", *layout, numElements, *d3d11Device );
-
-	XMFLOAT3 minPoint;
-	XMFLOAT3 maxPoint;
-	XMFLOAT3 pos = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	XMFLOAT3 rot = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	XMFLOAT3 scale = XMFLOAT3( 1.0f, 1.0f, 1.0f );
+	_shaderManager = new DXShaderManager( *d3d11Device );
+	_shaderManager->_stdShader = new DXShader( "VS", "PS", *layout, numElements, *d3d11Device );
 
 
-	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
-												*d3d11Device,
-												"Building_15stores_HouseOffice.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
-												"C:\\Users\\black\\source\\repos\\d3d11loadobjmodels\\d3d11loadobjmodels\\Resources",
-												rot,
-												pos,
-												scale,
-												true,
-												_materialsList,
-												*_lstEditorObject3Ds,
-												_camera,
-												_shaderManager,
-												&light,
-												inspireUtils);
+
+
+
 
 	//Compile Shaders from shader file
 	hr = D3DX11CompileFromFile( L"Effects.fx", 0, 0, "D2D_PS", "ps_4_0", 0, 0, 0, &D2D_PS_Buffer, 0, 0 );
@@ -948,18 +932,18 @@ bool InitScene( )
 	hr = d3d11Device->CreatePixelShader( D2D_PS_Buffer->GetBufferPointer( ), D2D_PS_Buffer->GetBufferSize( ), NULL, &D2D_PS );
 
 	//Set Vertex and Pixel Shaders
-	d3d11DevCon->VSSetShader( _shaderManager._stdShader->VS, 0, 0 );
-	d3d11DevCon->PSSetShader( _shaderManager._stdShader->PS, 0, 0 );
+	d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
+	d3d11DevCon->PSSetShader( _shaderManager->_stdShader->PS, 0, 0 );
 
+	_light = new Light( );
 
-
-	light.pos = XMFLOAT3( 0.0f, 1.0f, 0.0f );
-	light.dir = XMFLOAT3( 0.0f, 0.0f, 1.0f );
-	light.range = 1000.0f;
-	light.cone = 20.0f;
-	light.att = XMFLOAT3( 0.4f, 0.02f, 0.000f );
-	light.ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
-	light.diffuse = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
+	_light->pos = XMFLOAT3( 0.0f, 1.0f, 0.0f );
+	_light->dir = XMFLOAT3( 0.0f, 0.0f, 1.0f );
+	_light->range = 1000.0f;
+	_light->cone = 20.0f;
+	_light->att = XMFLOAT3( 0.9f, 0.02f, 0.000f );
+	_light->ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
+	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
 
 	//Create the vertex buffer
@@ -1011,7 +995,7 @@ bool InitScene( )
 
 
 	//Set the Input Layout
-	d3d11DevCon->IASetInputLayout( _shaderManager._stdShader->VertLayout );
+	d3d11DevCon->IASetInputLayout( _shaderManager->_stdShader->VertLayout );
 
 
 	//Set Primitive Topology
@@ -1055,8 +1039,27 @@ bool InitScene( )
 	hr = d3d11Device->CreateBuffer( &cbbd, NULL, &cbPerFrameBuffer );
 
 	//Camera information
-	_camera = Camera( Width, Height );
+	_camera = new Camera( Width, Height );
 
+	XMFLOAT3 minPoint;
+	XMFLOAT3 maxPoint;
+	XMFLOAT3 pos = XMFLOAT3( 0.0f, 0.0f, 0.0f );
+	XMFLOAT3 rot = XMFLOAT3( 0.0f, 0.0f, 0.0f );
+	XMFLOAT3 scale = XMFLOAT3( 0.1f, 0.1f, 0.1f );
+	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
+											*d3d11Device,
+											"Building_11stores_Pyramid.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
+											"C:\\Users\\black\\source\\repos\\InspireEngine\\InspireEngine\\Resources",
+											rot,
+											pos,
+											scale,
+											true,
+											_materialsList,
+											*_lstEditorObject3Ds,
+											*_camera,
+											*_shaderManager,
+											*_light,
+											*_inspireUtils );
 
 
 	D3D11_BLEND_DESC blendDesc;
@@ -1211,7 +1214,10 @@ void UpdateScene( double time )
 	//Define sphereWorld's world space matrix
 	Scale = XMMatrixScaling( 5.0f, 5.0f, 5.0f );
 	//Make sure the sphere is always centered around camera
-	Translation = XMMatrixTranslation( XMVectorGetX( _camera.CamPosition + XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f ) ), XMVectorGetY( _camera.CamPosition ), XMVectorGetZ( _camera.CamPosition ) );
+	Translation = XMMatrixTranslation( 
+		XMVectorGetX( _camera->CamPosition + XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f ) ), 
+		XMVectorGetY( _camera->CamPosition ),
+		XMVectorGetZ( _camera->CamPosition ) );
 
 	//Set sphereWorld's world space using the transformations
 	sphereWorld = Scale * Translation;
@@ -1227,13 +1233,13 @@ void UpdateScene( double time )
 	meshWorld = Rotation * Scale * Translation;
 	///////////////**************new**************////////////////////
 
-	light.pos.x = XMVectorGetX( _camera.CamPosition );
-	light.pos.y = XMVectorGetY( _camera.CamPosition );
-	light.pos.z = XMVectorGetZ( _camera.CamPosition );
+	_light->pos.x = XMVectorGetX( _camera->CamPosition );
+	_light->pos.y = XMVectorGetY( _camera->CamPosition );
+	_light->pos.z = XMVectorGetZ( _camera->CamPosition );
 
-	light.dir.x = XMVectorGetX( _camera.CamTarget ) - light.pos.x;
-	light.dir.y = XMVectorGetY( _camera.CamTarget ) - light.pos.y;
-	light.dir.z = XMVectorGetZ( _camera.CamTarget ) - light.pos.z;
+	_light->dir.x = XMVectorGetX( _camera->CamTarget ) - _light->pos.x;
+	_light->dir.y = XMVectorGetY( _camera->CamTarget ) - _light->pos.y;
+	_light->dir.z = XMVectorGetZ( _camera->CamTarget ) - _light->pos.z;
 }
 
 void RenderText( std::wstring text, int inInt )
@@ -1301,8 +1307,8 @@ void RenderText( std::wstring text, int inInt )
 	d3d11DevCon->IASetVertexBuffers( 0, 1, &d2dVertBuffer, &stride, &offset );
 
 	WVP = XMMatrixIdentity( );
-	_shaderManager.cbPerObj.WVP = XMMatrixTranspose( WVP );
-	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager.cbPerObj, 0, 0 );
+	_shaderManager->cbPerObj.WVP = XMMatrixTranspose( WVP );
+	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
 	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
 	d3d11DevCon->PSSetShaderResources( 0, 1, &d2dTexture );
 	d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
@@ -1334,7 +1340,8 @@ void DrawSceneNew( )
 	//Draw our model's NON-transparent subsets
 	d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
 
-	editorMeshInstanced->RenderInstanced( );
+	XMMATRIX VP = _camera->CamView * _camera->CamProjection;
+	editorMeshInstanced->RenderInstanced( VP );
 
 
 
@@ -1358,7 +1365,9 @@ void DrawSceneOld( )
 	d3d11DevCon->ClearRenderTargetView( renderTargetView, bgColor );
 	d3d11DevCon->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 
-	constbuffPerFrame.light = light;
+	XMMATRIX VP = _camera->CamView * _camera->CamProjection;
+
+	constbuffPerFrame.light = *_light;
 	d3d11DevCon->UpdateSubresource( cbPerFrameBuffer, 0, NULL, &constbuffPerFrame, 0, 0 );
 	d3d11DevCon->PSSetConstantBuffers( 0, 1, &cbPerFrameBuffer );
 
@@ -1372,8 +1381,8 @@ void DrawSceneOld( )
 	//////////////////////////////////////////////////////////////////
 	// DRAW GROUND
 	//Set Vertex and Pixel Shaders
-	d3d11DevCon->VSSetShader( _shaderManager._stdShader->VS, 0, 0 );
-	d3d11DevCon->PSSetShader( _shaderManager._stdShader->PS, 0, 0 );
+	d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
+	d3d11DevCon->PSSetShader( _shaderManager->_stdShader->PS, 0, 0 );
 	
 	//Set the cubes index buffer
 	d3d11DevCon->IASetIndexBuffer( squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
@@ -1383,11 +1392,11 @@ void DrawSceneOld( )
 	d3d11DevCon->IASetVertexBuffers( 0, 1, &squareVertBuffer, &stride, &offset );
 
 	//Set the WVP matrix and send it to the constant buffer in effect file
-	WVP = groundWorld * _camera.CamView * _camera.CamProjection;
+	WVP = groundWorld * VP;
 
-	_shaderManager.cbPerObj.WVP = XMMatrixTranspose( WVP );
-	_shaderManager.cbPerObj.World = XMMatrixTranspose( groundWorld );
-	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager.cbPerObj, 0, 0 );
+	_shaderManager->cbPerObj.WVP = XMMatrixTranspose( WVP );
+	_shaderManager->cbPerObj.World = XMMatrixTranspose( groundWorld );
+	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
 	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
 	d3d11DevCon->PSSetShaderResources( 0, 1, &CubesTexture );
 	d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
@@ -1401,7 +1410,7 @@ void DrawSceneOld( )
 	//Draw our model's NON-transparent subsets
 	d3d11DevCon->RSSetState( RSCullNone );
 
-	editorMeshInstanced->RenderInstanced( );
+	editorMeshInstanced->RenderInstanced( ( VP ) );
 	//////////////////////////////////////////////////////////////////
 
 	/*

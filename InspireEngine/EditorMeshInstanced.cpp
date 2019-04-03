@@ -13,26 +13,15 @@ EditorMeshInstanced::EditorMeshInstanced(
 	bool useBboxLod, 
 	std::vector<SurfaceMaterial> &materialsList, 
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-	Camera camera, 
+	Camera &camera, 
 	DXShaderManager &shaderManager,
-	Light* light,
-	InspireUtils* inspireUtils
-) : _d3d11DevCon( d3d11DevCon ), _d3d11Device( d3d11Device ), _materialsList( materialsList ), _lstEditorObject3Ds( lstEditorObject3Ds ), _shaderManager( shaderManager ),
-EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, pos, rot, scale, useBboxLod, materialsList, lstEditorObject3Ds, camera, shaderManager, light, inspireUtils )
-
+	Light &light,
+	InspireUtils &inspireUtils
+) : _d3d11DevCon( d3d11DevCon ), _d3d11Device( d3d11Device ), _materialsList( materialsList ), _lstEditorObject3Ds( lstEditorObject3Ds ), _camera( camera ), _shaderManager( shaderManager ), _light( light ),
+EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, rot, pos, scale, useBboxLod, materialsList, lstEditorObject3Ds, shaderManager, light, inspireUtils )
 {
-
-	this->_camera = camera;
-
-	//this->_materialsList = materialsList;
-
-	//this->_shaderManager = shaderManager;
-
-	//this->_lstEditorObject3Ds = lstEditorObject3Ds;
-
-	this->_light = light;
-
 	this->_spawnPoints = new std::vector<SpawnPointPtr>( );
+
 	SpawnPoint* p = new SpawnPoint( );
 	p->position = XMFLOAT3( 0.0f, 0.0f, 0.0f );
 	p->rotation = XMFLOAT3( 0.0f, 0.0f, 0.0f );
@@ -112,14 +101,14 @@ void EditorMeshInstanced::CreateTransforms( )
 	}
 }
 
-void EditorMeshInstanced::RenderInstanced( )
+void EditorMeshInstanced::RenderInstanced( XMMATRIX viewProjection )
 {
 	for ( INT32 i = 0; i < this->_transforms->size( ) - 1; ++i )
 	{
-		this->Render( i, INSTANCE_LIMIT );
+		this->Render( viewProjection, i, INSTANCE_LIMIT );
 	}
 
-	this->Render( this->_transforms->size( ), _lastBatchSize );
+	this->Render( viewProjection, this->_transforms->size( ), _lastBatchSize );
 }
 
 /// <summary>
@@ -133,7 +122,7 @@ float Dot( const XMFLOAT3 &left, const XMFLOAT3 &right )
 	return left.x * right.x + left.y * right.y + left.z * right.z;
 }
 
-void EditorMeshInstanced::Render( INT32 index, INT32 amount )
+void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 amount )
 {
 	/*
 	INT32 distanceToTest = 100000;
@@ -197,14 +186,14 @@ void EditorMeshInstanced::Render( INT32 index, INT32 amount )
 	{
 		case 0:
 		{
-			float scale = 500.0f;
+			float scale = 1.0f;
 			this->_meshDx->Draw(
 				this->_d3d11DevCon, 
-				this->_camera,
+				viewProjection,
 				this->_materialsList, 
 				this->_shaderManager,
 				XMFLOAT3( 0.0f, 0.0f, 0.0f ),
-				XMFLOAT3( 0.0f, 10.0f, 0.0f ),
+				XMFLOAT3( 0.0f, 0.5f, 0.0f ),
 				XMFLOAT3( scale, scale, scale ),
 //				listM,//this->_transforms->at( index ),
 //				amount, 
@@ -216,7 +205,7 @@ void EditorMeshInstanced::Render( INT32 index, INT32 amount )
 		{
 			_lstEditorObject3Ds[ LodId ]->_meshDx->DrawInstanced(
 				this->_d3d11DevCon,
-				this->_camera,
+				viewProjection,
 				this->_materialsList,
 				this->_shaderManager,
 				listM,
@@ -229,7 +218,7 @@ void EditorMeshInstanced::Render( INT32 index, INT32 amount )
 		{
 			this->_bBox->_meshDx->DrawInstanced(
 				this->_d3d11DevCon,
-				this->_camera,
+				viewProjection,
 				this->_materialsList,
 				this->_shaderManager,
 				listM,

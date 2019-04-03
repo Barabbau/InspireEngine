@@ -25,10 +25,9 @@ class EditorMesh
 				bool useBboxLod,
 				std::vector<SurfaceMaterial> &materialsList,
 				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-				Camera camera,
 				DXShaderManager &shaderManager,
-				Light* light,
-				InspireUtils* inspireUtils,
+				Light &light,
+				InspireUtils &inspireUtils,
 				XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
 	~EditorMesh( );
 

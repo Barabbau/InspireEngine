@@ -30,17 +30,17 @@ class EditorMeshInstanced : public EditorMesh
 		bool useBboxLod,
 		std::vector<SurfaceMaterial> &materialsList,
 		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-		Camera camera,
+		Camera &camera,
 		DXShaderManager &_shaderManager,
-		Light* light,
-		InspireUtils* inspireUtils
+		Light &light,
+		InspireUtils &inspireUtils
 	);
 	~EditorMeshInstanced( );
 
 	void CleanTransforms( );
 	void CreateTransforms( );
-	void RenderInstanced( );
-	void Render( INT32 index, INT32 amount );
+	void RenderInstanced( XMMATRIX viewProjection );
+	void Render( XMMATRIX viewProjection, INT32 index, INT32 amount );
 
 	const INT32 INSTANCE_LIMIT = 512;
 	INT32 _lastBatchSize;
@@ -57,7 +57,7 @@ class EditorMeshInstanced : public EditorMesh
 
 	std::vector<SpawnPointPtr> *_spawnPoints;
 
-	Light* _light;
+	Light &_light;
 
 
 	std::vector<XMMATRIX> listM;

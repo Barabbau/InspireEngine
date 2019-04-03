@@ -29,17 +29,8 @@ class MeshDX
 
 	typedef CComPtr<ID3D11Buffer> ID3D11BufferPtr;
 
-	void MeshDX::CreateDirectxBuffers( ID3D11Device &d3d11Device );
 	void MeshDX::CreateVertexBufferArray( ID3D11Device &d3d11Device );
 	void MeshDX::DisposeBuffers( bool cleanAll = true );
-
-	INT32 MeshDX::AddDynamicVertexBuffer(
-		ID3D11Device &d3d11Device,
-		const std::vector<DXFace> &faceList,
-		INT32 materialId,
-		INT32 start,
-		INT32 end,
-		INT32 bufferIndex );
 
 	INT32 MeshDX::AddVertexBuffer(
 		ID3D11Device  &d3d11Device,
@@ -48,10 +39,6 @@ class MeshDX
 		INT32 start,
 		INT32 end,
 		INT32 bufferIndex );
-
-	std::unordered_map<INT32, std::unordered_map<INT32, INT32>> MeshDX::BuildIdDictionaries(
-		const std::vector<DXFace> &faceList,
-		INT32 materialId );
 
 	void MeshDX::UpdateDynamicVertexBuffer(
 		ID3D11Device* d3d11Device,
@@ -62,22 +49,22 @@ class MeshDX
 
 	void MeshDX::Draw(
 		ID3D11DeviceContext &d3d11DevCon,
-		Camera &baseCamera,
+		XMMATRIX viewProjection,
 		std::vector<SurfaceMaterial> &materialsList,
 		DXShaderManager &shaderManager,
 		XMFLOAT3 rot,
 		XMFLOAT3 pos,
 		XMFLOAT3 scale,
-		Light *light );
+		Light &light );
 
 	void MeshDX::DrawInstanced(
 		ID3D11DeviceContext &d3d11DevCon,
-		Camera &baseCamera,
+		XMMATRIX viewProjection,
 		std::vector<SurfaceMaterial> &materialsList,
 		DXShaderManager &shaderManager,
 		std::vector<XMMATRIX> matrices,
 		INT32 instanceCount,
-		Light *light );
+		Light &light );
 
 	const INT32 BUFFER_LIMIT = 65535;
 	D3DXCOLOR _defaultColor = D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f );

@@ -15,10 +15,9 @@ EditorMesh::EditorMesh(
 	bool useBboxLod,
 	std::vector<SurfaceMaterial> &materialsList,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-	Camera camera,
 	DXShaderManager &shaderManager,
-	Light* light,
-	InspireUtils* inspireUtils,
+	Light &light,
+	InspireUtils &inspireUtils,
 	XMCOLOR color
 )
 {
@@ -61,7 +60,6 @@ EditorMesh::EditorMesh(
 										 false,
 										 materialsList,
 										 lstEditorObject3Ds,
-										 camera,
 										 shaderManager,
 										 light,
 										 inspireUtils,
@@ -91,7 +89,7 @@ EditorMesh::EditorMesh(
 
 	for ( char &c : objName )
 	{
-		c = inspireUtils->to_lowercase( c );
+		c = inspireUtils.to_lowercase( c );
 	}
 
 	this->FilePath = objName;
@@ -128,7 +126,7 @@ EditorMesh::EditorMesh(
 	XMFLOAT3 minPoint;
 	XMFLOAT3 maxPoint;
 
-	if ( inspireUtils->ObjRead(
+	if ( inspireUtils.ObjRead(
 		d3d11Device, 
 		shaderManager, 
 		fileName, 

@@ -66,10 +66,11 @@ class Mesh
 
 	bool ComputeNormals( );
 
-	std::vector<DXFace> Faces;//to store vertex information of 3D model started with v
-	std::vector<INT32> MaterialIds;//to store all 3D model face vertices
-	std::vector<XMFLOAT3> vertices;//to store vertex information of 3D model started with v
-	std::vector<XMFLOAT3> normals;//to store vertex information of 3D model started with v
-	std::vector<XMFLOAT2> uvs;//to store vertex information of 3D model started with v
+	std::vector<DXFace> Faces;
+	std::vector<INT32> MaterialIds;
+	std::vector<XMFLOAT3> vertices;
+	std::vector<XMFLOAT3> normals;
+	std::vector<XMFLOAT2> uvs;
+
 	private:
 };
