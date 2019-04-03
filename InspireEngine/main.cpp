@@ -1049,7 +1049,7 @@ bool InitScene( )
 	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
 											*d3d11Device,
 											"Building_11stores_Pyramid.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
-											"C:\\Users\\black\\source\\repos\\InspireEngine\\InspireEngine\\Resources",
+											"C:\\Users\\black\\OneDrive\\Documenti\\GitHub\\InspireEngine\\InspireEngine\\Resources",
 											rot,
 											pos,
 											scale,
