@@ -20,6 +20,7 @@ class SurfaceMaterial
 
 	DXShader* shader;
 	ID3D11ShaderResourceView* albedoTexture;
+	ID3D11ShaderResourceView* normalTexture;
 
 	private:
 

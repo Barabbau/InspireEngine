@@ -941,7 +941,7 @@ bool InitScene( )
 	_light->dir = XMFLOAT3( 0.0f, 0.0f, 1.0f );
 	_light->range = 1000.0f;
 	_light->cone = 20.0f;
-	_light->att = XMFLOAT3( 0.9f, 0.02f, 0.000f );
+	_light->att = XMFLOAT3( 0.5f, 0.05f, 0.0001f );
 	_light->ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
 	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
@@ -1272,7 +1272,7 @@ void RenderText( std::wstring text, int inInt )
 
 	//Create the D2D Render Area
 	D2D1_RECT_F layoutRect = D2D1::RectF( 0, 0, Width, Height );
-
+	
 	//Draw the Text
 	D2DRenderTarget->DrawText(
 		printText.c_str( ),

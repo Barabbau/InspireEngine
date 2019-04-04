@@ -427,6 +427,7 @@ void MeshDX::Draw(
 		if ( surfaceMaterial->hasTexture )
 		{
 			d3d11DevCon.PSSetShaderResources( 0, 1, &surfaceMaterial->albedoTexture );
+			d3d11DevCon.PSSetShaderResources( 1, 1, &surfaceMaterial->normalTexture );
 		}
 
 		d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );

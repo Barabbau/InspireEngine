@@ -105,12 +105,25 @@ bool InspireUtils::ReadMaterialIdName(
 			StringToWString( filePath, filePathStd );
 
 			HRESULT hr = D3DX11CreateShaderResourceViewFromFile(
-			&d3d11Device,
-			filePath.c_str( ),
-			NULL,
-			NULL,
-			&newMaterial.albedoTexture,
-			NULL );
+				&d3d11Device,
+				filePath.c_str( ),
+				NULL,
+				NULL,
+				&newMaterial.albedoTexture,
+				NULL );
+
+
+			std::string filePathNormal = pathModels + "maps\\" + strLineName + "_Normal.dds";
+			std::wstring normalPath;
+			StringToWString( normalPath, filePathNormal );
+
+			hr = D3DX11CreateShaderResourceViewFromFile(
+				&d3d11Device,
+				normalPath.c_str( ),
+				NULL,
+				NULL,
+				&newMaterial.normalTexture,
+				NULL );
 
 
 			newMaterial.difColor = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
