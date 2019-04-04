@@ -81,8 +81,6 @@ IDirectInputDevice8* DIMouse;
 ID3D11Buffer* sphereIndexBuffer;
 ID3D11Buffer* sphereVertBuffer;
 
-ID3D11ShaderResourceView* smrv;
-
 ID3D11DepthStencilState* DSLessEqual;
 ID3D11RasterizerState* RSCullNone;
 
@@ -165,6 +163,13 @@ Camera* _camera;
 DXShader* _skyShader;
 Mesh _mesh;
 
+typedef std::shared_ptr<EditorMesh> EditorMeshPtr;
+
+DXShaderManager* _shaderManager;
+std::vector<SurfaceMaterial> _materialsList;
+EditorMeshInstanced* editorMeshInstanced;
+std::vector<EditorMeshPtr> *_lstEditorObject3Ds;
+InspireUtils* _inspireUtils;
 
 //Function Prototypes//
 bool InitializeDirect3d11App( HINSTANCE hInstance );
@@ -627,7 +632,7 @@ void CleanUp( )
 	_skyShader->VS_Buffer->Release( );
 	_skyShader->PS_Buffer->Release( );
 
-	smrv->Release( );
+	_shaderManager->skyboxTexture->Release( );
 
 	DSLessEqual->Release( );
 	RSCullNone->Release( );
@@ -898,13 +903,7 @@ void InitD2DScreenTexture( )
 	d3d11Device->CreateShaderResourceView( sharedTex11, NULL, &d2dTexture );
 }
 
-typedef std::shared_ptr<EditorMesh> EditorMeshPtr;
 
-DXShaderManager* _shaderManager;
-std::vector<SurfaceMaterial> _materialsList;
-EditorMeshInstanced* editorMeshInstanced;
-std::vector<EditorMeshPtr> *_lstEditorObject3Ds;
-InspireUtils* _inspireUtils;
 //_lstEditorObject3Ds = new std::vector<EditorMesh*>( );
 bool InitScene( )
 {
@@ -918,10 +917,6 @@ bool InitScene( )
 
 	_shaderManager = new DXShaderManager( *d3d11Device );
 	_shaderManager->_stdShader = new DXShader( "VS", "PS", *layout, numElements, *d3d11Device );
-
-
-
-
 
 
 	//Compile Shaders from shader file
@@ -1120,7 +1115,7 @@ bool InitScene( )
 	SMViewDesc.TextureCube.MipLevels = SMTextureDesc.MipLevels;
 	SMViewDesc.TextureCube.MostDetailedMip = 0;
 
-	hr = d3d11Device->CreateShaderResourceView( SMTexture, &SMViewDesc, &smrv );
+	hr = d3d11Device->CreateShaderResourceView( SMTexture, &SMViewDesc, &_shaderManager->skyboxTexture );
 
 	// Describe the Sample State
 	D3D11_SAMPLER_DESC sampDesc;
@@ -1428,7 +1423,7 @@ void DrawSceneOld( )
 	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
 	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
 	//Send our skymap resource view to pixel shader
-	d3d11DevCon->PSSetShaderResources( 0, 1, &smrv );
+	d3d11DevCon->PSSetShaderResources( 0, 1, &_shaderManager->skyboxTexture );
 	d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
 
 	//Set the new VS and PS shaders

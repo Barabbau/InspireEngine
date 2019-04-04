@@ -1,4 +1,5 @@
 #include "DXShaderManager.h"
+#include "InspireUtils.h"
 
 DXShaderManager::DXShaderManager( )
 {
@@ -103,6 +104,20 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	blendDesc.RenderTarget[ 0 ] = rtbd;
 
 	d3d11Device.CreateBlendState( &blendDesc, &Transparency );
+
+	/*
+	std::string filePathStd = pathTextures + "maps\\" + "skymap" + ".dds";
+	std::wstring filePath;
+	inspireUtils.StringToWString( filePath, filePathStd );
+
+	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(
+		&d3d11Device,
+		filePath.c_str( ),
+		NULL,
+		NULL,
+		&this->skyboxTexture,
+		NULL );
+		*/
 }
 
 DXShaderManager::~DXShaderManager( )

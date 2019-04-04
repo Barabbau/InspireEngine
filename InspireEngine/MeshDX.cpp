@@ -428,6 +428,7 @@ void MeshDX::Draw(
 		{
 			d3d11DevCon.PSSetShaderResources( 0, 1, &surfaceMaterial->albedoTexture );
 			d3d11DevCon.PSSetShaderResources( 1, 1, &surfaceMaterial->normalTexture );
+			d3d11DevCon.PSSetShaderResources( 2, 1, &shaderManager.skyboxTexture );
 		}
 
 		d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );

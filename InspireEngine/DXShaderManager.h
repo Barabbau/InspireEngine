@@ -37,9 +37,8 @@ class DXShaderManager
 	ID3D11BlendStatePtr Transparency;
 	ID3D11BlendStatePtr d2dTransparency;
 
-	//Textures and material variables, used for all mesh's loaded
-	std::vector<ID3D11ShaderResourceView*> meshSRV;
-	std::vector<std::string> textureNameArray;
+	// Skybox texture
+	ID3D11ShaderResourceView* skyboxTexture;
 
 	DXShader* _stdShader;
 

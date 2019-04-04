@@ -33,7 +33,8 @@ struct VS_OUTPUT
 {
 	float4 Pos : SV_POSITION;
 	float4 worldPos : POSITION;
-	float2 TexCoord : TEXCOORD;
+	float2 TexCoord : TEXCOORD1;
+	float4 skyTexCoord : COLOR0;
 	float3 normal : NORMAL;
 };
 
@@ -53,6 +54,11 @@ VS_OUTPUT VS(float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 norma
 	output.normal = mul(normal, World);
 
     output.TexCoord = inTexCoord;
+	float4x4 mat = WVP;
+	mat[ 0 ][ 0 ] = 1;
+	mat[ 1 ][ 1 ] = 1;
+	mat[ 2 ][ 2 ] = 1;
+	output.skyTexCoord = mul( inPos, mat ).xyww;
 
     return output;
 }
@@ -72,6 +78,9 @@ SKYMAP_VS_OUTPUT SKYMAP_VS(float3 inPos : POSITION, float2 inTexCoord : TEXCOORD
 
 float4 PS(VS_OUTPUT input) : SV_TARGET
 {
+	float3 SkyColor = SkyMap.Sample( ObjSamplerState, input.skyTexCoord ).xyz;//float3( 1.0f, 1.0f, 1.0f );// 
+
+
 	//return float4( 1.0f, 1.0f, 1.0f, 1.0f );
 	input.normal = normalize(input.normal);	
 
@@ -107,11 +116,11 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
 		float3 binormal = cross( input.normal, tangent.xyz );
 
 
-
+		//normal = mul( normal, World );
 		// Calculate the normal from the data in the bump map.
 		bumpNormal = ( normal.x * tangent ) + ( normal.y * binormal ) + ( normal.z * input.normal );
 
-		//normal = mul( normal, World );
+		
 		diffuse = ObjTexture.Sample( ObjSamplerState, input.TexCoord );
 	}
 
@@ -145,7 +154,7 @@ float4 PS(VS_OUTPUT input) : SV_TARGET
 	if( howMuchLight > 0.0f )
 	{	
 		//Add light to the finalColor of the pixel
-		finalColor += diffuse * light.diffuse * howMuchLight;
+		finalColor += diffuse * light.diffuse * SkyColor *howMuchLight;
 					
 		//Calculate Light's Distance Falloff factor
 		finalColor /= (light.att[0] + (light.att[1] * d)) + (light.att[2] * (d*d));		
