@@ -27,7 +27,7 @@
 #include <fstream>
 #include <istream>
 
-
+#include "VertexLayout.h"
 #include "InspireUtils.h"
 #include "DXShaderManager.h"
 #include "Camera.h"
@@ -45,10 +45,8 @@ IDXGISwapChain* SwapChain;
 ID3D11Device* d3d11Device;
 ID3D11DeviceContext* d3d11DevCon;
 ID3D11RenderTargetView* renderTargetView;
-ID3D11Buffer* squareIndexBuffer;
 ID3D11DepthStencilView* depthStencilView;
 ID3D11Texture2D* depthStencilBuffer;
-ID3D11Buffer* squareVertBuffer;
 
 ID3D11PixelShader* D2D_PS;
 ID3D10Blob* D2D_PS_Buffer;
@@ -58,8 +56,11 @@ ID3D11Buffer* cbPerObjectBuffer;
 ID3D11BlendState* d2dTransparency;
 ID3D11RasterizerState* CCWcullMode;
 ID3D11RasterizerState* CWcullMode;
-ID3D11ShaderResourceView* CubesTexture;
-ID3D11SamplerState* CubesTexSamplerState;
+
+
+ID3D11ShaderResourceView* GroundAldebo;
+ID3D11ShaderResourceView* GroundNormal;
+ID3D11SamplerState* TexSamplerState;
 ID3D11Buffer* cbPerFrameBuffer;
 
 ID3D10Device1 *d3d101Device;
@@ -86,18 +87,6 @@ ID3D11RasterizerState* RSCullNone;
 
 ///////////////**************new**************////////////////////
 ID3D11BlendState* Transparency;
-//Mesh variables. Each loaded mesh will need its own set of these
-ID3D11Buffer* meshVertBuff;
-ID3D11Buffer* meshIndexBuff;
-XMMATRIX meshWorld;
-int meshSubsets = 0;
-std::vector<int> meshSubsetIndexStart;
-std::vector<int> meshSubsetTexture;
-
-//Textures and material variables, used for all mesh's loaded
-std::vector<ID3D11ShaderResourceView*> meshSRV;
-std::vector<std::wstring> textureNameArray;
-///////////////**************new**************////////////////////
 
 std::wstring printText;
 
@@ -127,11 +116,6 @@ XMMATRIX cube2World;
 
 XMMATRIX d2dWorld;
 
-
-
-
-XMMATRIX groundWorld;
-
 float moveLeftRight = 0.0f;
 float moveBackForward = 0.0f;
 
@@ -141,7 +125,6 @@ int NumSphereFaces;
 
 XMMATRIX sphereWorld;
 
-XMMATRIX Rotation;
 XMMATRIX Scale;
 XMMATRIX Translation;
 
@@ -156,9 +139,6 @@ int fps = 0;
 __int64 frameTimeOld = 0;
 double frameTime;
 
-
-
-//std::shared_ptr<Camera>
 Camera* _camera;
 DXShader* _skyShader;
 Mesh _mesh;
@@ -170,6 +150,7 @@ std::vector<SurfaceMaterial> _materialsList;
 EditorMeshInstanced* editorMeshInstanced;
 std::vector<EditorMeshPtr> *_lstEditorObject3Ds;
 InspireUtils* _inspireUtils;
+EditorMesh* groundPlane;
 
 //Function Prototypes//
 bool InitializeDirect3d11App( HINSTANCE hInstance );
@@ -212,30 +193,6 @@ Light* _light;
 
 cbPerFrame constbuffPerFrame;
 
-/*
-struct Vertex	//Overloaded Vertex Structure
-{
-	Vertex( )
-	{
-	}
-	Vertex( float x, float y, float z,
-			float u, float v,
-			float nx, float ny, float nz )
-		: pos( x, y, z ), texCoord( u, v ), normal( nx, ny, nz )
-	{
-	}
-
-	XMFLOAT3 pos;
-	XMFLOAT2 texCoord;
-	XMFLOAT3 normal;
-};
-*/
-D3D11_INPUT_ELEMENT_DESC layout[ ] =
-{
-	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	{ "NORMAL",	 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0}
-};
 UINT numElements = ARRAYSIZE( layout );
 
 int WINAPI WinMain( HINSTANCE hInstance,	//Main windows function
@@ -324,7 +281,7 @@ bool InitializeWindow( HINSTANCE hInstance,
 	hwnd = CreateWindowEx(
 		NULL,
 		WndClassName,
-		L"Lesson 4 - Begin Drawing",
+		L"Inspire Engine v0.2",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		width, height,
@@ -597,8 +554,6 @@ void CleanUp( )
 	d3d11Device->Release( );
 	d3d11DevCon->Release( );
 	renderTargetView->Release( );
-	squareVertBuffer->Release( );
-	squareIndexBuffer->Release( );
 
 	depthStencilView->Release( );
 	depthStencilBuffer->Release( );
@@ -917,7 +872,7 @@ bool InitScene( )
 
 	_shaderManager = new DXShaderManager( *d3d11Device );
 	_shaderManager->_stdShader = new DXShader( "VS", "PS", *layout, numElements, *d3d11Device );
-
+	_shaderManager->_stdShaderInstanced = new DXShader( "VS_Instanced", "PS_Instanced", *layout, numElements, *d3d11Device );
 
 	//Compile Shaders from shader file
 	hr = D3DX11CompileFromFile( L"Effects.fx", 0, 0, "D2D_PS", "ps_4_0", 0, 0, 0, &D2D_PS_Buffer, 0, 0 );
@@ -934,60 +889,44 @@ bool InitScene( )
 
 	_light->pos = XMFLOAT3( 0.0f, 1.0f, 0.0f );
 	_light->dir = XMFLOAT3( 0.0f, 0.0f, 1.0f );
-	_light->range = 1000.0f;
+	_light->range = 80.0f;
 	_light->cone = 20.0f;
 	_light->att = XMFLOAT3( 0.5f, 0.05f, 0.0001f );
 	_light->ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
-	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
-
-
-	//Create the vertex buffer
-	DXVertex v[ ] =
-	{
-		// Bottom Face
-		DXVertex( -1.0f, -1.0f, -1.0f, 100.0f, 100.0f, 0.0f, 1.0f, 0.0f ),
-		DXVertex( 1.0f, -1.0f, -1.0f,   0.0f, 100.0f, 0.0f, 1.0f, 0.0f ),
-		DXVertex( 1.0f, -1.0f,  1.0f,   0.0f,   0.0f, 0.0f, 1.0f, 0.0f ),
-		DXVertex( -1.0f, -1.0f,  1.0f, 100.0f,   0.0f, 0.0f, 1.0f, 0.0f ),
-	};
-
-	DWORD indices[ ] = {
-		0,  1,  2,
-		0,  2,  3,
-	};
-
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory( &indexBufferDesc, sizeof( indexBufferDesc ) );
-
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof( DWORD ) * 2 * 3;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA iinitData;
-
-	iinitData.pSysMem = indices;
-	d3d11Device->CreateBuffer( &indexBufferDesc, &iinitData, &squareIndexBuffer );
-
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory( &vertexBufferDesc, sizeof( vertexBufferDesc ) );
-
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof( DXVertex ) * 4;
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA vertexBufferData;
-
-	ZeroMemory( &vertexBufferData, sizeof( vertexBufferData ) );
-	vertexBufferData.pSysMem = v;
-	hr = d3d11Device->CreateBuffer( &vertexBufferDesc, &vertexBufferData, &squareVertBuffer );
+	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 0.7f, 1.0f );
 
 
 
 
+	// Create the GROUND PLANE
+	std::vector<DXVertex> *vVector = new std::vector<DXVertex>( );
+
+	float groundSize = 500.0f;
+	vVector->push_back( DXVertex( -groundSize, 0.0f, -groundSize, 1000.0f, 1000.0f, 0.0f, 1.0f, 0.0f ) );
+	vVector->push_back( DXVertex( groundSize, 0.0f, -groundSize, 0.0f, 1000.0f, 0.0f, 1.0f, 0.0f ) );
+	vVector->push_back( DXVertex( groundSize, 0.0f, groundSize, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f ) );
+	vVector->push_back( DXVertex( -groundSize, 0.0f, groundSize, 1000.0f, 0.0f, 0.0f, 1.0f, 0.0f ) );
+
+	std::vector<DWORD> *indicesVector = new std::vector<DWORD>();
+	indicesVector->push_back( 2 ); indicesVector->push_back( 1 );	indicesVector->push_back( 0 );
+	indicesVector->push_back( 3 ); indicesVector->push_back( 2 );	indicesVector->push_back( 0 );
+
+	groundPlane = new EditorMesh( *d3d11DevCon,
+								  *d3d11Device,
+								  "grondPlane",
+								  ".\\Resources\\",
+								  "GD_Grass02",
+								  *vVector,
+								  *indicesVector,
+								  XMFLOAT3( 0, 0, 0 ),
+								  XMFLOAT3( 0, 0, 0 ),
+								  XMFLOAT3( 1.0f, 1.0f, 1.0f ),
+								false,
+								_materialsList,
+								*_lstEditorObject3Ds,
+								*_shaderManager,
+								*_light,
+								*_inspireUtils );
 
 	//Set the Input Layout
 	d3d11DevCon->IASetInputLayout( _shaderManager->_stdShader->VertLayout );
@@ -1044,7 +983,7 @@ bool InitScene( )
 	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
 											*d3d11Device,
 											"Building_11stores_Pyramid.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
-											"C:\\Users\\black\\OneDrive\\Documenti\\GitHub\\InspireEngine\\InspireEngine\\Resources",
+											".\\Resources",
 											rot,
 											pos,
 											scale,
@@ -1094,10 +1033,14 @@ bool InitScene( )
 
 	d3d11Device->CreateBlendState( &blendDesc, &Transparency );
 	///////////////**************new**************////////////////////
+	/*
+	hr = D3DX11CreateShaderResourceViewFromFile( d3d11Device, L".\\Resources\\maps\\GD_Grass02.dds",
+												 NULL, NULL, &GroundAldebo, NULL );
 
-	hr = D3DX11CreateShaderResourceViewFromFile( d3d11Device, L"grass.jpg",
-												 NULL, NULL, &CubesTexture, NULL );
+	hr = D3DX11CreateShaderResourceViewFromFile( d3d11Device, L".\\Resources\\maps\\GD_Grass02_Normal.dds",
+											 NULL, NULL, &GroundNormal, NULL );
 
+											 */
 	///Load Skymap's cube texture///
 	D3DX11_IMAGE_LOAD_INFO loadSMInfo;
 	loadSMInfo.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
@@ -1129,7 +1072,7 @@ bool InitScene( )
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	//Create the Sample State
-	hr = d3d11Device->CreateSamplerState( &sampDesc, &CubesTexSamplerState );
+	hr = d3d11Device->CreateSamplerState( &sampDesc, &TexSamplerState );
 
 	D3D11_RASTERIZER_DESC cmdesc;
 
@@ -1193,16 +1136,6 @@ double GetFrameTime( )
 
 void UpdateScene( double time )
 {
-	//Reset cube1World
-	groundWorld = XMMatrixIdentity( );
-
-	//Define cube1's world space matrix
-	Scale = XMMatrixScaling( 500.0f, 10.0f, 500.0f );
-	Translation = XMMatrixTranslation( 0.0f, 10.0f, 0.0f );
-
-	//Set cube1's world space using the transformations
-	groundWorld = Scale * Translation;
-
 	//Reset sphereWorld
 	sphereWorld = XMMatrixIdentity( );
 
@@ -1216,17 +1149,6 @@ void UpdateScene( double time )
 
 	//Set sphereWorld's world space using the transformations
 	sphereWorld = Scale * Translation;
-
-	///////////////**************new**************////////////////////
-	meshWorld = XMMatrixIdentity( );
-
-	//Define cube1's world space matrix
-	Rotation = XMMatrixRotationY( 3.14f );
-	Scale = XMMatrixScaling( 1.0f, 1.0f, 1.0f );
-	Translation = XMMatrixTranslation( 0.0f, 0.0f, 0.0f );
-
-	meshWorld = Rotation * Scale * Translation;
-	///////////////**************new**************////////////////////
 
 	_light->pos.x = XMVectorGetX( _camera->CamPosition );
 	_light->pos.y = XMVectorGetY( _camera->CamPosition );
@@ -1306,113 +1228,57 @@ void RenderText( std::wstring text, int inInt )
 	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
 	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
 	d3d11DevCon->PSSetShaderResources( 0, 1, &d2dTexture );
-	d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
+	d3d11DevCon->PSSetSamplers( 0, 1, &TexSamplerState );
 
 	d3d11DevCon->RSSetState( CWcullMode );
 	d3d11DevCon->DrawIndexed( 6, 0, 0 );
 }
 
-void DrawSceneNew( )
+void DrawScene( )
 {
-	//Clear our render target and depth/stencil view
-	float bgColor[ 4 ] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	d3d11DevCon->ClearRenderTargetView( renderTargetView, bgColor );
-	d3d11DevCon->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
+	//d3d11DevCon->RSSetState( RSCullNone );
 
-	//Set our Render Target
-	d3d11DevCon->OMSetRenderTargets( 1, &renderTargetView, depthStencilView );
-
-	//Set the default blend state (no blending) for opaque objects
-	//d3d11DevCon->OMSetBlendState( 0, 0, 0xffffffff );
-
-	//Set Vertex and Pixel Shaders
-	//d3d11DevCon->VSSetShader( _shaderManager._stdShader->VS, 0, 0 );
-	//d3d11DevCon->PSSetShader( _shaderManager._stdShader->PS, 0, 0 );
-
-	d3d11DevCon->RSSetState( CCWcullMode );
-
-	///////////////**************new**************////////////////////
-	//Draw our model's NON-transparent subsets
-	d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
-
-	XMMATRIX VP = _camera->CamView * _camera->CamProjection;
-	editorMeshInstanced->RenderInstanced( VP );
-
-
-
-
-	///////////////**************new**************////////////////////	
-	//Draw our model's TRANSPARENT subsets now
-
-	//Set our blend state
-	//d3d11DevCon->OMSetBlendState(Transparency, NULL, 0xffffffff);
-
-	RenderText( L"FPS: ", fps );
-
-	//Present the backbuffer to the screen
-	SwapChain->Present( 0, 0 );
-}
-
-void DrawSceneOld( )
-{
 	//Clear our render target and depth/stencil view
 	float bgColor[ 4 ] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	d3d11DevCon->ClearRenderTargetView( renderTargetView, bgColor );
 	d3d11DevCon->ClearDepthStencilView( depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0 );
 
 	XMMATRIX VP = _camera->CamView * _camera->CamProjection;
-
-	constbuffPerFrame.light = *_light;
-	d3d11DevCon->UpdateSubresource( cbPerFrameBuffer, 0, NULL, &constbuffPerFrame, 0, 0 );
-	d3d11DevCon->PSSetConstantBuffers( 0, 1, &cbPerFrameBuffer );
 
 	//Set our Render Target
 	d3d11DevCon->OMSetRenderTargets( 1, &renderTargetView, depthStencilView );
 
 	//Set the default blend state (no blending) for opaque objects
 	d3d11DevCon->OMSetBlendState( 0, 0, 0xffffffff );
-	
-	
-	//////////////////////////////////////////////////////////////////
-	// DRAW GROUND
-	//Set Vertex and Pixel Shaders
-	d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
-	d3d11DevCon->PSSetShader( _shaderManager->_stdShader->PS, 0, 0 );
-	
-	//Set the cubes index buffer
-	d3d11DevCon->IASetIndexBuffer( squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
-	//Set the cubes vertex buffer
+
+
 	UINT stride = sizeof( DXVertex );
 	UINT offset = 0;
-	d3d11DevCon->IASetVertexBuffers( 0, 1, &squareVertBuffer, &stride, &offset );
-
-	//Set the WVP matrix and send it to the constant buffer in effect file
-	WVP = groundWorld * VP;
-
-	_shaderManager->cbPerObj.WVP = XMMatrixTranspose( WVP );
-	_shaderManager->cbPerObj.World = XMMatrixTranspose( groundWorld );
-	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
-	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
-	d3d11DevCon->PSSetShaderResources( 0, 1, &CubesTexture );
-	d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
-	d3d11DevCon->RSSetState( CCWcullMode );
-	d3d11DevCon->DrawIndexed( 6, 0, 0 );
-	//////////////////////////////////////////////////////////////////
 	
-
-
 	//////////////////////////////////////////////////////////////////
 	//Draw our model's NON-transparent subsets
-	d3d11DevCon->RSSetState( RSCullNone );
+	d3d11DevCon->RSSetState( CWcullMode );
 
-	editorMeshInstanced->RenderInstanced( ( VP ) );
+	groundPlane->RenderObject(
+							*d3d11DevCon,
+							VP,
+							_materialsList,
+							*_lstEditorObject3Ds,
+							*_shaderManager,
+							groundPlane->rotation,
+							groundPlane->position,
+							groundPlane->scale,
+							*_light );
+
+	editorMeshInstanced->RenderInstanced( VP );
 	//////////////////////////////////////////////////////////////////
-
+	
 	
 	//////////////////////////////////////////////////////////////////
 	/////Draw the Sky's Sphere//////
 	//Set the spheres index buffer
 	d3d11DevCon->IASetIndexBuffer( sphereIndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
+
 	//Set the spheres vertex buffer
 	d3d11DevCon->IASetVertexBuffers( 0, 1, &sphereVertBuffer, &stride, &offset );
 
@@ -1420,11 +1286,13 @@ void DrawSceneOld( )
 	WVP = sphereWorld * _camera->CamView * _camera->CamProjection;
 	_shaderManager->cbPerObj.WVP = XMMatrixTranspose( WVP );
 	_shaderManager->cbPerObj.World = XMMatrixTranspose( sphereWorld );
+
 	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
-	d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
+	d3d11DevCon->VSSetConstantBuffers( 1, 1, &cbPerObjectBuffer );
+
 	//Send our skymap resource view to pixel shader
 	d3d11DevCon->PSSetShaderResources( 0, 1, &_shaderManager->skyboxTexture );
-	d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
+	d3d11DevCon->PSSetSamplers( 0, 1, &TexSamplerState );
 
 	//Set the new VS and PS shaders
 	d3d11DevCon->VSSetShader( _skyShader->VS, 0, 0 );
@@ -1436,9 +1304,9 @@ void DrawSceneOld( )
 	d3d11DevCon->DrawIndexed( NumSphereFaces * 3, 0, 0 );
 	
 	//Set the default VS, PS shaders and depth/stencil state
-	//d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
-	//d3d11DevCon->PSSetShader( _shaderManager->_stdShader->PS, 0, 0 );
-	//d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
+	d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
+	d3d11DevCon->PSSetShader( _shaderManager->_stdShader->PS, 0, 0 );
+	d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
 	//////////////////////////////////////////////////////////////////
 
 
@@ -1448,23 +1316,25 @@ void DrawSceneOld( )
 
 	//Set our blend state
 	//d3d11DevCon->OMSetBlendState(Transparency, NULL, 0xffffffff);
+	
 
+	//////////////////////////////////////////////////////////////////
+	/////Draw the Text//////
+	//Set the WVP matrix and send it to the constant buffer in effect file
+	WVP = sphereWorld * _camera->CamView * _camera->CamProjection;
+	_shaderManager->cbPerObj.WVP = XMMatrixTranspose( WVP );
+	_shaderManager->cbPerObj.World = XMMatrixTranspose( sphereWorld );
+
+	d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &_shaderManager->cbPerObj, 0, 0 );
+	d3d11DevCon->VSSetConstantBuffers( 1, 1, &cbPerObjectBuffer );
+
+	//Set the default VS, PS shaders and depth/stencil state
+	d3d11DevCon->VSSetShader( _shaderManager->_stdShader->VS, 0, 0 );
+	//////////////////////////////////////////////////////////////////
 	RenderText( L"FPS: ", fps );
 
 	//Present the backbuffer to the screen
 	SwapChain->Present( 0, 0 );
-}
-
-void DrawScene( )
-{
-	if ( 0 == 1 )
-	{
-		DrawSceneNew( );
-	}
-	else
-	{
-		DrawSceneOld( );
-	}
 }
 
 int messageloop( )

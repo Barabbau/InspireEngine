@@ -22,29 +22,24 @@ EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, rot, pos, scale, use
 {
 	this->_spawnPoints = new std::vector<SpawnPointPtr>( );
 
-	SpawnPoint* p = new SpawnPoint( );
-	p->position = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	p->rotation = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	p->scale = XMFLOAT3( 1.0f, 1.0f, 1.0f );
+	for ( size_t i = 0; i < 50; i++ )
+	{
+		SpawnPoint* p = new SpawnPoint( );
+		p->position = XMFLOAT3( i * 20.0f, 0.02f, i );
+		p->rotation = XMFLOAT3( 0.0f, 0.0f, 0.0f );
+		p->scale = XMFLOAT3( 1.0f, 1.0f, 1.0f );
 
-	SpawnPointPtr firstPoint( p );
-	this->_spawnPoints->push_back( firstPoint );
+		SpawnPointPtr firstPoint( p );
+		this->_spawnPoints->push_back( firstPoint );
+	}
 
 	this->_transforms = new std::vector<std::vector<XMMATRIX>>( );
-
 	this->CreateTransforms( );
-
-
-	for ( size_t i = 0; i < 512; i++ )
-	{
-		listM.push_back( XMMatrixTranspose( XMMatrixIdentity( ) ) );
-	}
 }
 
 EditorMeshInstanced::~EditorMeshInstanced( )
 {
 }
-
 
 void EditorMeshInstanced::CleanTransforms( )
 {
@@ -75,10 +70,11 @@ void EditorMeshInstanced::CreateTransforms( )
 
 		meshWorld = Rotation * Scale * Translation;
 
+		// Pre transpose for Shader usage
 		meshWorld = XMMatrixTranspose( meshWorld );
 
 		// Create new list of transforms if we max out the size of the actual one
-		if ( this->_transforms[ this->_transforms->size( ) - 1 ].size( ) >= INSTANCE_LIMIT )
+		if ( this->_transforms->at( this->_transforms->size( ) - 1 ).size( ) > INSTANCE_LIMIT )
 		{
 			std::vector<XMMATRIX> newTransforms;
 			this->_transforms->push_back( newTransforms );
@@ -88,14 +84,15 @@ void EditorMeshInstanced::CreateTransforms( )
 		this->_transforms->at( this->_transforms->size( ) - 1 ).push_back( meshWorld );
 	}
 
-	_lastBatchSize = this->_transforms[ this->_transforms->size( ) - 1 ].size( );
+	_lastBatchSize = this->_transforms->at( this->_transforms->size( ) - 1 ).size( );
 
-	// Pre transpose for Shader usage
-	INT32 count = this->_transforms[ this->_transforms->size( ) - 1 ].size( );
+	// Fill INSTANCE_LIMIT of last batch for shader usage
+	INT32 count = this->_transforms->at( this->_transforms->size( ) - 1 ).size( );
 	INT32 i = 0;
 
-	while ( i < INSTANCE_LIMIT - 1 )
+	while ( i < INSTANCE_LIMIT - count )
 	{
+		// Pre transpose for Shader usage
 		this->_transforms->at( this->_transforms->size( ) - 1 ).push_back( XMMatrixTranspose( XMMatrixIdentity( ) ) );
 		i++;
 	}
@@ -108,7 +105,14 @@ void EditorMeshInstanced::RenderInstanced( XMMATRIX viewProjection )
 		this->Render( viewProjection, i, INSTANCE_LIMIT );
 	}
 
-	this->Render( viewProjection, this->_transforms->size( ), _lastBatchSize );
+	if ( this->_transforms->size( ) > 1 )
+	{
+		this->Render( viewProjection, this->_transforms->size( ), _lastBatchSize );
+	}
+	else
+	{
+		this->Render( viewProjection, 0, _lastBatchSize );
+	}
 }
 
 /// <summary>
@@ -124,37 +128,32 @@ float Dot( const XMFLOAT3 &left, const XMFLOAT3 &right )
 
 void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 amount )
 {
-	/*
 	INT32 distanceToTest = 100000;
-	
+	INT32 distanceFromCamera = 100000;
+
 	if ( this->LodId != -1 )
 	{
-		for ( INT32 i = 0; i < this->_transforms[ index ].size( ) - 1; ++i )
+		XMVECTOR cameraPosition = XMVectorSet(
+			XMVectorGetX( this->_camera.CamPosition ),
+			XMVectorGetY( this->_camera.CamPosition ),
+			XMVectorGetZ( this->_camera.CamPosition ),
+			0 );
+
+		for ( INT32 i = 0; i < amount; ++i )
 		{
-			//XMMATRIX transform = this->_transforms->at( index ).at( i );
+			XMMATRIX transform = this->_transforms->at( index ).at( i );
 
-			XMFLOAT3 objPos = XMFLOAT3(
-//				transform->m[ 0 ][ 3 ],
-//				transform->m[ 1 ][ 3 ],
-//				transform->m[ 2 ][ 3 ]
-				0,//transform( 0, 3 ),
-				0,//transform( 1, 3 ),
-				0//transform( 2, 3 )
-				 );
+			XMVECTOR objPosition = XMVectorSet(
+				XMVectorGetW( this->_transforms->at( index ).at( i ).r[ 0 ] ),
+				XMVectorGetW( this->_transforms->at( index ).at( i ).r[ 1 ] ),
+				XMVectorGetW( this->_transforms->at( index ).at( i ).r[ 2 ] ),
+				0 );
 
-			XMFLOAT3 relativePosition = XMFLOAT3(
-				objPos.x - XMVectorGetX( this->_camera.CamPosition ),
-				objPos.y - XMVectorGetY( this->_camera.CamPosition ),
-				objPos.z - XMVectorGetZ( this->_camera.CamPosition )
-			);
-			
-			XMFLOAT3 cameraForward = XMFLOAT3(
-				XMVectorGetX( this->_camera.camForward ),
-				XMVectorGetY( this->_camera.camForward ),
-				XMVectorGetZ( this->_camera.camForward )
-			);
-
-			INT32 distanceFromCamera = ( INT32 )Dot( cameraForward, relativePosition );
+			XMVECTOR vectorSub = XMVectorSubtract( cameraPosition, objPosition );
+			XMVECTOR length = XMVector3Length( vectorSub );
+			float distance = 0.0f;
+			XMStoreFloat( &distance, length );
+			distanceFromCamera = ( INT32 )distance;
 
 			if ( distanceFromCamera < distanceToTest )
 			{
@@ -180,12 +179,13 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 		lodIndex = 3;
 	}
 
-	*/
-	INT32 lodIndex = 0;
+	
+	//INT32 lodIndex = 0;
 	switch ( lodIndex )
 	{
 		case 0:
 		{
+			/*
 			this->_meshDx->Draw(
 				this->_d3d11DevCon, 
 				viewProjection,
@@ -197,6 +197,15 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 //				listM,//this->_transforms->at( index ),
 //				amount, 
 				this->_light );
+				*/
+			this->_meshDx->DrawInstanced(
+				this->_d3d11DevCon,
+				viewProjection,
+				this->_materialsList,
+				this->_shaderManager,
+				this->_transforms->at( index ).data( ),
+				amount,
+				this->_light );
 		}
 		break;
 
@@ -207,7 +216,7 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 				viewProjection,
 				this->_materialsList,
 				this->_shaderManager,
-				listM,
+				this->_transforms->at( index ).data( ),
 				amount,
 				this->_light );
 		}
@@ -220,7 +229,7 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 				viewProjection,
 				this->_materialsList,
 				this->_shaderManager,
-				listM,
+				this->_transforms->at( index ).data( ),
 				amount,
 				this->_light );
 		}

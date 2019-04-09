@@ -1,4 +1,3 @@
-
 struct Light
 {
 	float3 pos;
@@ -10,18 +9,25 @@ struct Light
 	float4 diffuse;
 };
 
-cbuffer cbPerFrame
+cbuffer cbPerFrame  : register( b0 )
 {
 	Light light;
 };
 
-cbuffer cbPerObject
+cbuffer cbPerObject : register( b1 )
 {
 	float4x4 WVP;
     float4x4 World;
-
 	float4 difColor;
 	bool hasTexture;
+};
+
+cbuffer cbPerObjectInstanced : register( b2 )
+{
+	float4x4 WVPs;
+	float4x4 Worlds[ 512 ];
+	float4 difColorInstanced;
+	bool hasTextureInstanced;
 };
 
 Texture2D ObjTexture  : register( t0 );
@@ -34,8 +40,7 @@ struct VS_OUTPUT
 	float4 Pos : SV_POSITION;
 	float4 worldPos : POSITION;
 	float2 TexCoord : TEXCOORD1;
-	float4 skyTexCoord : COLOR0;
-	float3 normal : NORMAL;
+	float3x3    WorldToTangentSpace    : TEXCOORD2;
 };
 
 struct SKYMAP_VS_OUTPUT	//output structure for skymap vertex shader
@@ -44,25 +49,119 @@ struct SKYMAP_VS_OUTPUT	//output structure for skymap vertex shader
 	float3 texCoord : TEXCOORD;
 };
 
-VS_OUTPUT VS(float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL)
+VS_OUTPUT VS( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT )
+//VS_OUTPUT VS(float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT, float3 binormal : BINORMAL )
 {
     VS_OUTPUT output;
 
-    output.Pos = mul(inPos, WVP);
-	output.worldPos = mul(inPos, World);
+    output.Pos = mul( inPos, WVP );
+	output.worldPos = mul( inPos, World );
 
-	output.normal = mul(normal, World);
+	float3 binormal = normalize( cross( normal, tangent ) );
+	output.WorldToTangentSpace[ 0 ] = normalize( mul( tangent, World ) );
+	output.WorldToTangentSpace[ 1 ] = normalize( mul( binormal, World ) );
+	output.WorldToTangentSpace[ 2 ] = normalize( mul( normal, World ) );
 
     output.TexCoord = inTexCoord;
-	float4x4 mat = WVP;
-	mat[ 0 ][ 0 ] = 1;
-	mat[ 1 ][ 1 ] = 1;
-	mat[ 2 ][ 2 ] = 1;
-	output.skyTexCoord = mul( inPos, mat ).xyww;
 
     return output;
 }
 
+VS_OUTPUT VS_Instanced( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT, uint instanceID : SV_InstanceID )
+//VS_OUTPUT VS_Instanced( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT, float3 binormal : BINORMAL, uint instanceID : SV_InstanceID )
+{
+	VS_OUTPUT output;
+
+	output.Pos = mul( inPos, mul(Worlds[ instanceID ], WVPs ));
+	output.worldPos = mul( inPos, Worlds[ instanceID ] );
+
+	float3 binormal = normalize( cross( normal, tangent ) );
+	output.WorldToTangentSpace[ 0 ] = normalize( mul( tangent, Worlds[ instanceID ] ) );
+	output.WorldToTangentSpace[ 1 ] = normalize( mul( binormal, Worlds[ instanceID ] ) );
+	output.WorldToTangentSpace[ 2 ] = normalize( mul( normal, Worlds[ instanceID ] ) );
+
+	output.TexCoord = inTexCoord;
+
+	return output;
+}
+
+float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
+{
+	//Set diffuse color of material
+	float4 diffuse = tintColor;
+	float3 SkyColor = float3( 1.0f, 1.0f, 1.0f );
+	float3 bumpNormal = input.WorldToTangentSpace[ 2 ];
+
+	float3 finalColor = float3( 0.0f, 0.0f, 0.0f );
+
+	//Create the vector between light position and pixels position
+	float3 lightToPixelVec = light.pos - input.worldPos;
+	float3 vecWorldProjection = normalize( -lightToPixelVec );
+
+	if ( isTextured == true )
+	{
+		// Albedo
+		diffuse = ObjTexture.Sample( ObjSamplerState, input.TexCoord );
+
+		float3  LuminanceWeights = float3( 0.299f, 0.587f, 0.114f );
+
+		float    luminance = dot( diffuse, LuminanceWeights );
+		diffuse = lerp( luminance, diffuse, float4( 1.4f, 1.4f, 1.4f, 1.0f ) );
+
+		// Sample the pixel in the bump map.
+		float3 textureNormal = ObjNormal.SampleLevel( ObjSamplerState, input.TexCoord, 0 ).xyz;// 4 * ( 1.0f - diffuse.r ) ).xyz;
+		textureNormal = ( textureNormal * 2.0f ) - 1.0f;
+
+		bumpNormal = normalize( mul( textureNormal, input.WorldToTangentSpace ) );
+			
+		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal ); //input.WorldToTangentSpace[ 2 ] );// Normal are reblended with model normals
+		cubeSampCoords.z = -cubeSampCoords.z;
+
+		SkyColor = SkyMap.SampleLevel( ObjSamplerState, cubeSampCoords, diffuse.r * 6 ).xyz * diffuse.g;
+	}
+
+	//Find the distance between the light pos and pixel pos
+	float d = length( lightToPixelVec );
+
+	//Add the ambient light
+	float3 finalAmbient = diffuse * light.ambient;
+
+	//If pixel is too far, return pixel color with ambient light
+	if ( d > light.range )
+	{
+		//return float4( bumpNormal, 1.0f );
+		float R = dot( normalize( lightToPixelVec ), bumpNormal );
+
+		return float4( finalAmbient + SkyColor * R * light.ambient, diffuse.a );
+	}
+
+	//Turn lightToPixelVec into a unit length vector describing
+	//the pixels direction from the lights position
+	lightToPixelVec /= d;
+
+	//Calculate how much light the pixel gets by the angle
+	//in which the light strikes the pixels surface
+	float howMuchLight = dot( lightToPixelVec, bumpNormal );
+
+	//If light is striking the front side of the pixel
+	if ( howMuchLight > 0.0f )
+	{
+		//Add light to the finalColor of the pixel
+		finalColor += diffuse * light.diffuse * howMuchLight * 0.65 + ( SkyColor * ( howMuchLight * 0.4 ) );
+
+		//Calculate Light's Distance Falloff factor
+		finalColor /= ( light.att[ 0 ] + ( light.att[ 1 ] * d ) ) + ( light.att[ 2 ] * ( d * d ) );
+
+		//Calculate falloff from center to edge of pointlight cone
+		finalColor *= pow( max( dot( -lightToPixelVec, light.dir ), 0.0f ), light.cone );
+	}
+
+	//make sure the values are between 1 and 0, and add the ambient
+	finalColor = saturate( finalColor + finalAmbient );
+
+	//Return Final Color
+	return float4( finalColor, diffuse.a );
+}
 
 SKYMAP_VS_OUTPUT SKYMAP_VS(float3 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL)
 {
@@ -78,96 +177,12 @@ SKYMAP_VS_OUTPUT SKYMAP_VS(float3 inPos : POSITION, float2 inTexCoord : TEXCOORD
 
 float4 PS(VS_OUTPUT input) : SV_TARGET
 {
-	float3 SkyColor = SkyMap.Sample( ObjSamplerState, input.skyTexCoord ).xyz;//float3( 1.0f, 1.0f, 1.0f );// 
+	return ComputePS( input, hasTexture, difColor );
+}
 
-
-	//return float4( 1.0f, 1.0f, 1.0f, 1.0f );
-	input.normal = normalize(input.normal);	
-
-	//Set diffuse color of material
-	float4 diffuse = difColor;
-	
-	float3 bumpNormal = input.normal.xyz;
-
-	//If material has a diffuse texture map, set it now
-	if(hasTexture == true)
-	{
-		// Sample the pixel in the bump map.
-		float3 normal = ObjNormal.Sample( ObjSamplerState, input.TexCoord ).xyz;
-
-		// Expand the range of the normal value from (0, +1) to (-1, +1).
-		normal = ( normal * 2.0f ) - 1.0f;
-
-		float3 tangent;
-
-		float3 c1 = cross( input.normal, float3( 0.0, 0.0, 1.0 ) );
-		float3 c2 = cross( input.normal, float3( 0.0, 1.0, 0.0 ) );
-
-		if ( length( c1 ) > length( c2 ) )
-		{
-			tangent = c1;
-		}
-		else
-		{
-			tangent = c2;
-		}
-		//tangent = float3( ddx( input.TexCoord.x ), 0.0f, ddx( input.TexCoord.y ) );
-		//tangent = normalize( tangent );
-		float3 binormal = cross( input.normal, tangent.xyz );
-
-
-		//normal = mul( normal, World );
-		// Calculate the normal from the data in the bump map.
-		bumpNormal = ( normal.x * tangent ) + ( normal.y * binormal ) + ( normal.z * input.normal );
-
-		
-		diffuse = ObjTexture.Sample( ObjSamplerState, input.TexCoord );
-	}
-
-
-
-//	float3 bumpNormal = normalize (input.normal + normal);// ( normal.x * input.normal + normal.z * tangent + normal.x * binormal );// normal.z * input.normal + ( normal.x * tangent + normal.y * binormal ) );
-	float3 finalColor = float3(0.0f, 0.0f, 0.0f);
-	
-	//Create the vector between light position and pixels position
-	float3 lightToPixelVec = light.pos - input.worldPos;
-		
-	//Find the distance between the light pos and pixel pos
-	float d = length(lightToPixelVec);
-	
-	//Add the ambient light
-	float3 finalAmbient = diffuse * light.ambient;
-
-	//If pixel is too far, return pixel color with ambient light
-	if( d > light.range )
-		return float4(finalAmbient, diffuse.a);
-		
-	//Turn lightToPixelVec into a unit length vector describing
-	//the pixels direction from the lights position
-	lightToPixelVec /= d; 
-		
-	//Calculate how much light the pixel gets by the angle
-	//in which the light strikes the pixels surface
-	float howMuchLight = dot(lightToPixelVec, bumpNormal );
-
-	//If light is striking the front side of the pixel
-	if( howMuchLight > 0.0f )
-	{	
-		//Add light to the finalColor of the pixel
-		finalColor += diffuse * light.diffuse * SkyColor *howMuchLight;
-					
-		//Calculate Light's Distance Falloff factor
-		finalColor /= (light.att[0] + (light.att[1] * d)) + (light.att[2] * (d*d));		
-
-		//Calculate falloff from center to edge of pointlight cone
-		finalColor *= pow(max(dot(-lightToPixelVec, light.dir), 0.0f), light.cone);
-	}
-	
-	//make sure the values are between 1 and 0, and add the ambient
-	finalColor = saturate(finalColor * 1.4f + finalAmbient * 1.4f );
-	
-	//Return Final Color
-	return float4(finalColor, diffuse.a);
+float4 PS_Instanced( VS_OUTPUT input ) : SV_TARGET
+{
+	return ComputePS( input, hasTextureInstanced, difColorInstanced );
 }
 
 float4 SKYMAP_PS(SKYMAP_VS_OUTPUT input) : SV_Target

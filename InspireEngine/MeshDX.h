@@ -62,7 +62,7 @@ class MeshDX
 		XMMATRIX viewProjection,
 		std::vector<SurfaceMaterial> &materialsList,
 		DXShaderManager &shaderManager,
-		std::vector<XMMATRIX> matrices,
+		XMMATRIX World[],
 		INT32 instanceCount,
 		Light &light );
 

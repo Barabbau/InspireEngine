@@ -45,7 +45,7 @@ class EditorMeshInstanced : public EditorMesh
 	const INT32 INSTANCE_LIMIT = 512;
 	INT32 _lastBatchSize;
 
-	Camera _camera;
+	Camera &_camera;
 	ID3D11Device &_d3d11Device;
 	ID3D11DeviceContext &_d3d11DevCon;
 
@@ -60,7 +60,7 @@ class EditorMeshInstanced : public EditorMesh
 	Light &_light;
 
 
-	std::vector<XMMATRIX> listM;
+	//std::vector<XMMATRIX> listM;
 
 	private:
 

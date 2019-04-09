@@ -61,7 +61,8 @@ bool InspireUtils::ReadMaterialIdName(
 	const std::string &line,
 	INT32 materialId,
 	std::vector<SurfaceMaterial> &materialsList,
-	DXShaderManager &shaderManager )
+	DXShaderManager &shaderManager,
+	INT32 materialType )
 {
 	// Load Material names
 	if ( line.substr( 0, 7 ) == "usemtl " )
@@ -133,7 +134,21 @@ bool InspireUtils::ReadMaterialIdName(
 			newMaterial.matName = new char[ size + 1 ];  //we need extra char for NUL
 			memcpy( newMaterial.matName, strLineName.c_str( ), size + 1 );
 
-			newMaterial.shader = shaderManager._stdShader;
+			switch ( materialType )
+			{
+				case 0:
+					newMaterial.shader = shaderManager._stdShader;
+					break;
+
+				case 1:
+					newMaterial.shader = shaderManager._stdShaderInstanced;
+					break;
+
+				default:
+					newMaterial.shader = shaderManager._stdShader;
+					break;
+			}
+
 			newMaterial.transparent = false;
 
 			materialsList.push_back( newMaterial );
@@ -155,7 +170,7 @@ bool InspireUtils::ReadMaterialIdName(
 			object3D->MaterialIds.push_back( materialId );
 		}
 
-		_currentId = materialId;
+		CurrentId = materialId;
 
 		return true;
 	}
@@ -240,7 +255,7 @@ bool InspireUtils::ObjRead(
 			}
 		}
 
-		materialId = _currentId;
+		materialId = CurrentId;
 
 		for ( size_t i = 0; i < lines.size( ); i++ )
 		{
@@ -265,7 +280,7 @@ bool InspireUtils::ObjRead(
 					v >> y;
 					v >> z;
 
-					vert = XMFLOAT3( -x, y, z );
+					vert = XMFLOAT3( x, y, z * -1.0f );
 					object3D->vertices.push_back( vert );
 
 					// Calculate mix and max for the bounding box
@@ -313,7 +328,7 @@ bool InspireUtils::ObjRead(
 					v >> x;
 					v >> y;
 
-					uv = XMFLOAT2( x, 1 - y );
+					uv = XMFLOAT2( x, 1.0f - y );
 					object3D->uvs.push_back( uv );
 
 					continue;
@@ -330,7 +345,21 @@ bool InspireUtils::ObjRead(
 					v >> y;
 					v >> z;
 
-					normal = XMFLOAT3( x, y, z );
+					normal = XMFLOAT3( x, y, z * -1.0f );
+					/*
+					if ( ( normal.x ) < 0.0f )
+					{
+						normal.x = normal.x * -1.0f;
+					}
+					if ( ( normal.y ) < 0.0f )
+					{
+						normal.y = normal.y * -1.0f;
+					}
+					if ( ( normal.z ) < 0.0f )
+					{
+						normal.z = normal.z * -1.0f;
+					}
+					*/
 					object3D->normals.push_back( normal );
 
 					continue;
@@ -347,7 +376,7 @@ bool InspireUtils::ObjRead(
 					materialsList,
 					shaderManager ) )
 				{
-					materialId = _currentId;
+					materialId = CurrentId;
 
 					continue;
 				}

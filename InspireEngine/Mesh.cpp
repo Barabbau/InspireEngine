@@ -12,6 +12,123 @@ Mesh::~Mesh( )
 	//ctor
 }
 
+void Mesh::ComputeTangents( )
+{
+	this->tangents = std::vector<XMFLOAT3>( );
+	this->tangents.resize( this->normals.size( ) );
+	this->binormals = std::vector<XMFLOAT3>( );
+	this->binormals.resize( this->normals.size( ) );
+
+	for ( size_t i = 0; i < this->Faces.size( ); i++ )
+	{
+		const DXFace &face = this->Faces.at( i );
+
+
+		for ( size_t b = 0; b < 3; b += 3 )		
+		{
+			XMFLOAT3 vertex0 = this->vertices.at( face.indexes[ b ] );
+			XMFLOAT3 vertex1 = this->vertices.at( face.indexes[ b + 1 ] );
+			XMFLOAT3 vertex2 = this->vertices.at( face.indexes[ b + 2 ] );
+
+			/*
+			XMVECTOR deltaPos;
+
+			if ( vertex0.x == vertex1.x
+				 && vertex0.y == vertex1.y
+				 && vertex0.z == vertex1.z )
+			{
+				deltaPos = XMLoadFloat3( &vertex2 ) - XMLoadFloat3( &vertex0 );
+			}				
+			else
+			{
+				deltaPos = XMLoadFloat3( &vertex1 ) - XMLoadFloat3( &vertex0 );
+			}
+			*/
+			// Edges of the triangle : position delta
+			XMVECTOR deltaPos1 = XMLoadFloat3( &vertex1 ) - XMLoadFloat3( &vertex0 );
+			XMVECTOR deltaPos2 = XMLoadFloat3( &vertex2 ) - XMLoadFloat3( &vertex0 );
+
+			// Shortcuts for UVs
+			XMFLOAT2 uv0 = this->uvs.at( face.uvIndexes[ b ] );
+			XMFLOAT2 uv1 = this->uvs.at( face.uvIndexes[ b + 1 ] );
+			XMFLOAT2 uv2 = this->uvs.at( face.uvIndexes[ b + 2 ] );
+
+			// Shortcuts for UVs
+			XMVECTOR deltaUV1 = XMLoadFloat2( &uv1 ) - XMLoadFloat2( &uv0 );
+			XMVECTOR deltaUV2 = XMLoadFloat2( &uv2 ) - XMLoadFloat2( &uv0 );
+ 
+			// We can now use our formula to compute the tangent and the bitangent
+			XMFLOAT2 deltaUV1F;
+			XMStoreFloat2( &deltaUV1F, deltaUV1 );
+			XMFLOAT2 deltaUV2F;
+			XMStoreFloat2( &deltaUV2F, deltaUV2 );
+
+			//XMFLOAT3 deltaUV1F;
+			//XMStoreFloat2( &deltaUV1F, deltaUV1 );
+			//XMFLOAT3 deltaUV2F;
+			//XMStoreFloat2( &deltaUV2F, deltaUV2 );
+
+			float r = 1.0f / ( deltaUV1F.x * deltaUV2F.y - deltaUV1F.y * deltaUV2F.x );
+			XMVECTOR tangent = ( deltaPos1 * deltaUV2F.y - deltaPos2 * deltaUV1F.y ) * r;
+			XMVECTOR binormal = ( deltaPos2 * deltaUV1F.x - deltaPos1 * deltaUV1F.x ) * r;
+			
+			XMVECTOR normal = ( XMLoadFloat3( &this->normals.at( face.normalIndexes[ b ] ) )
+								+ XMLoadFloat3( &this->normals.at( face.normalIndexes[ b + 1 ] ) )
+								+ XMLoadFloat3( &this->normals.at( face.normalIndexes[ b + 2 ] ) ) ) / 3.0f;
+			/*
+			XMVECTOR tangent;
+			XMVECTOR binormal;
+
+			// avoid division with 0
+			XMFLOAT2 deltaUV1F;
+			XMStoreFloat2( &deltaUV1F, deltaUV1 );
+			//XMFLOAT2 deltaUV2F;
+			//XMStoreFloat2( &deltaUV2F, deltaUV2 );
+
+			if ( deltaUV1F.y != 0 )
+			{
+				tangent = deltaPos / deltaUV1F.y;
+			}
+			else
+			{
+				tangent = deltaPos / 1.0f;
+			}
+			*/
+			//tangent = XMVector3Normalize( tangent - XMVector3Dot( tangent, normal ) * normal );
+			//binormal = XMVector3Normalize( tangent - XMVector3Cross( tangent, normal ) );
+			
+
+			XMFLOAT3 tangentF;
+			XMStoreFloat3( &tangentF, tangent );
+
+			if ( ( tangentF.x ) < 0.0f )
+			{
+				tangentF.x = tangentF.x * -1.0f;
+			}
+			if ( ( tangentF.y ) < 0.0f )
+			{
+				tangentF.y = tangentF.y * -1.0f;
+			}
+			if ( ( tangentF.z ) < 0.0f )
+			{
+				tangentF.z = tangentF.z * -1.0f;
+			}
+			tangent = XMVector3Normalize( tangent - XMVector3Dot( tangent, normal ) * normal );
+
+			this->tangents.at( face.normalIndexes[ b ] ) = tangentF;
+			this->tangents.at( face.normalIndexes[ b + 1 ] ) = tangentF;
+			this->tangents.at( face.normalIndexes[ b + 2 ] ) = tangentF;
+
+			XMFLOAT3 binormalF;
+			XMStoreFloat3( &binormalF, binormal );
+			this->binormals.at( face.normalIndexes[ b ] ) = binormalF;
+			this->binormals.at( face.normalIndexes[ b + 1 ] ) = binormalF;
+			this->binormals.at( face.normalIndexes[ b + 2 ] ) = binormalF;
+			
+		}
+	}
+}
+
 bool Mesh::ComputeNormals( )
 {
 	HRESULT hr = 0;

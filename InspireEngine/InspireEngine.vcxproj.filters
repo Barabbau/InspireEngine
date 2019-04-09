@@ -91,5 +91,11 @@
     <ClInclude Include="InspireUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cbPerInstancedObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexLayout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

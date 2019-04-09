@@ -43,7 +43,8 @@ class InspireUtils
 		const std::string &line,
 		INT32 materialId,
 		std::vector<SurfaceMaterial> &materialsList,
-		DXShaderManager &shaderManager );
+		DXShaderManager &shaderManager,
+		INT32 materialType = 1 );
 
 
 
@@ -54,7 +55,7 @@ class InspireUtils
 	/// <summary>
 	/// The current material id used for render & sorting purposes
 	/// </summary>
-	INT32 _currentId;
+	INT32 CurrentId;
 
 
 	private:

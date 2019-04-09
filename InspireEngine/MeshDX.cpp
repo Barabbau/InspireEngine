@@ -157,7 +157,7 @@ INT32 MeshDX::AddVertexBuffer(
 	std::vector<INT32> idsVertexesDictionary;
 	std::vector<INT32> idsNormalsDictionary;
 	std::vector<INT32> idsUvsDictionary;
-
+	std::vector<INT32> idsTangentsDictionary;
 
 	try
 	{
@@ -172,7 +172,7 @@ INT32 MeshDX::AddVertexBuffer(
 				idsVertexesDictionary.push_back( face.indexes[ v ] );
 				idsNormalsDictionary.push_back( face.normalIndexes[ v ] );
 				idsUvsDictionary.push_back( face.uvIndexes[ v ] );
-
+				idsTangentsDictionary.push_back( face.normalIndexes[ v ] );
 
 				indexData.push_back( ( DWORD ) stdIndex );
 			}
@@ -195,6 +195,12 @@ INT32 MeshDX::AddVertexBuffer(
 
 			// uv
 			tempVert.texCoord = this->_originalObject3D->uvs[ idsUvsDictionary[ index ] ];
+
+			// tangents
+			tempVert.tangent = this->_originalObject3D->tangents[ idsTangentsDictionary[ index ] ];
+
+			// tangents
+			//tempVert.binormal = this->_originalObject3D->binormals[ idsTangentsDictionary[ index ] ];
 
 			vertexData.push_back( tempVert );
 
@@ -344,8 +350,26 @@ void MeshDX::UpdateDynamicVertexBuffer(
 void MeshDX::DisposeBuffers( bool cleanAll )
 {
 	this->_bufferSize->clear( );
+	for ( int a = 0; a < this->_indexBufferArray->size( ); a++ )
+	{
+		for ( size_t i = 0; i < this->_indexBufferArray->at( a ).size( ); i++ )
+		{
+			this->_indexBufferArray->at( a ).at( i ).Release( );
+		}
+		this->_indexBufferArray->at( a ).clear( );
+	}
 	this->_indexBufferArray->clear( );
+
+	for ( int a = 0; a < this->_vertexBufferArray->size( ); a++ )
+	{
+		for ( size_t i = 0; i < this->_vertexBufferArray->at( a ).size( ); i++ )
+		{
+			this->_vertexBufferArray->at( a ).at( i ).Release( );
+		}
+		this->_vertexBufferArray->at( a ).clear( );
+	}
 	this->_vertexBufferArray->clear( );
+
 	this->_bufferIndexesOriginalIds->clear( );
 
 	if ( cleanAll )
@@ -357,7 +381,6 @@ void MeshDX::DisposeBuffers( bool cleanAll )
 
 /// <summary>
 /// Draw Standard Objects
-/// using BaseCbChangesEveryFrame & StandardShader.fx
 /// </summary>
 void MeshDX::Draw(
 	ID3D11DeviceContext &d3d11DevCon,
@@ -401,7 +424,6 @@ void MeshDX::Draw(
 			//Set the default blend state (no blending) for opaque objects
 			d3d11DevCon.OMSetBlendState( 0, 0, 0xffffffff );
 		}
-		
 
 		//Set Vertex and Pixel Shaders
 		d3d11DevCon.VSSetShader( surfaceMaterial->shader->VS, 0, 0 );
@@ -411,8 +433,8 @@ void MeshDX::Draw(
 		shaderManager.constbuffPerFrame.light = light;
 
 		d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.constbuffPerFrame, 0, 0 );
+		d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
 		d3d11DevCon.PSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
-
 
 		// set per object constant buffer
 		shaderManager.cbPerObj.WVP = XMMatrixTranspose( WVP );
@@ -421,7 +443,7 @@ void MeshDX::Draw(
 		shaderManager.cbPerObj.hasTexture = surfaceMaterial->hasTexture;
 
 		d3d11DevCon.UpdateSubresource( shaderManager.cbPerObjectBuffer, 0, NULL, &shaderManager.cbPerObj, 0, 0 );
-		d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbPerObjectBuffer.p );
+		d3d11DevCon.VSSetConstantBuffers( 1, 1, &shaderManager.cbPerObjectBuffer.p );
 		d3d11DevCon.PSSetConstantBuffers( 1, 1, &shaderManager.cbPerObjectBuffer.p );
 		
 		if ( surfaceMaterial->hasTexture )
@@ -464,7 +486,7 @@ void MeshDX::DrawInstanced(
 	XMMATRIX viewProjection,
 	std::vector<SurfaceMaterial> &materialsList,
 	DXShaderManager &shaderManager,
-	std::vector<XMMATRIX> matrices,
+	XMMATRIX World[ ],
 	INT32 instanceCount,
 	Light &light )
 {
@@ -472,26 +494,16 @@ void MeshDX::DrawInstanced(
 	UINT offset = 0;
 
 	XMMATRIX meshWorld = XMMatrixIdentity( );
-
 	//Set the WVP matrix and send it to the constant buffer in effect file
+
 	XMMATRIX WVP = meshWorld * viewProjection;
 
-
-	// set per frame constant buffer
-	shaderManager.constbuffPerFrame.light = light;
-	
-	d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.constbuffPerFrame, 0, 0 );
-	
-	d3d11DevCon.PSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
-	
-	// set per object constant buffer
-	shaderManager.cbPerObjInstanced.WVP = XMMatrixTranspose( WVP );
-	shaderManager.cbPerObjInstanced.Matrices = matrices; // XMMatrixTranspose( matrices );
-
-	d3d11DevCon.UpdateSubresource( shaderManager.cbPerObjectBuffer, 0, NULL, &shaderManager.cbPerObjInstanced, 0, 0 );
-	d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbPerObjectBuffer.p );
-	d3d11DevCon.PSSetConstantBuffers( 1, 1, &shaderManager.cbPerObjectBuffer.p );
-	
+	//XMMATRIX tempMatrix;
+	for ( int i = 0; i < 512; i++ )
+	{
+		// To make things simple, we just store the matrix directly into our cbPerInst structure
+		shaderManager.cbPerObjInstanced.World[ i ] = World[ i ];
+	}
 
 	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
 
@@ -518,9 +530,28 @@ void MeshDX::DrawInstanced(
 		d3d11DevCon.VSSetShader( surfaceMaterial->shader->VS, 0, 0 );
 		d3d11DevCon.PSSetShader( surfaceMaterial->shader->PS, 0, 0 );
 
+		// set per frame constant buffer
+		shaderManager.constbuffPerFrame.light = light;
+
+		d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.constbuffPerFrame, 0, 0 );
+		d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
+		d3d11DevCon.PSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
+
+		// set per object constant buffer
+		shaderManager.cbPerObjInstanced.WVP = XMMatrixTranspose( WVP );
+
+		shaderManager.cbPerObjInstanced.difColorInstanced = surfaceMaterial->difColor;
+		shaderManager.cbPerObjInstanced.hasTextureInstanced = surfaceMaterial->hasTexture;
+
+		d3d11DevCon.UpdateSubresource( shaderManager.cbPerObjectBufferInstanced, 0, NULL, &shaderManager.cbPerObjInstanced, 0, 0 );
+		d3d11DevCon.VSSetConstantBuffers( 2, 1, &shaderManager.cbPerObjectBufferInstanced.p );
+		d3d11DevCon.PSSetConstantBuffers( 2, 1, &shaderManager.cbPerObjectBufferInstanced.p );
+
 		if ( surfaceMaterial->hasTexture )
 		{
 			d3d11DevCon.PSSetShaderResources( 0, 1, &surfaceMaterial->albedoTexture );
+			d3d11DevCon.PSSetShaderResources( 1, 1, &surfaceMaterial->normalTexture );
+			d3d11DevCon.PSSetShaderResources( 2, 1, &shaderManager.skyboxTexture );
 		}
 		 
 		for ( INT32 a = 0; a < this->_indexBufferArray->at( materialId ).size( ); a++ )

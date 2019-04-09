@@ -6,7 +6,7 @@
 Camera::Camera( float Width, float Height )
 {
 	//Camera information
-	CamPosition = XMVectorSet( 0.0f, 5.0f, -4.0f, 0.0f ); //5.0f, -8.0f, 0.0f );
+	CamPosition = XMVectorSet( 0.0f, 1.83f, -24.0f, 0.0f );
 	CamTarget = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f );
 	camUp = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 

@@ -41,6 +41,7 @@ class DXShaderManager
 	ID3D11ShaderResourceView* skyboxTexture;
 
 	DXShader* _stdShader;
+	DXShader* _stdShaderInstanced;
 
 	private:
 

@@ -11,9 +11,9 @@ struct cbPerObjectInstanced
 {
 	public:
 	XMMATRIX  WVP;
-	std::vector<XMMATRIX> Matrices;
+	XMMATRIX World[ 512 ];
 
 	//These will be used for the pixel shader
-	XMFLOAT4 difColor;
-	bool hasTexture;
+	XMFLOAT4 difColorInstanced;
+	bool hasTextureInstanced;
 };

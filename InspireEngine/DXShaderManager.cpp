@@ -29,7 +29,7 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	ZeroMemory( &cbbd, sizeof( D3D11_BUFFER_DESC ) );
 
 	cbbdInstanced.Usage = D3D11_USAGE_DEFAULT;
-	cbbdInstanced.ByteWidth = sizeof( cbPerObject ) * 512;
+	cbbdInstanced.ByteWidth = sizeof( cbPerObjectInstanced );
 	cbbdInstanced.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cbbdInstanced.CPUAccessFlags = 0;
 	cbbdInstanced.MiscFlags = 0;
@@ -104,20 +104,6 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	blendDesc.RenderTarget[ 0 ] = rtbd;
 
 	d3d11Device.CreateBlendState( &blendDesc, &Transparency );
-
-	/*
-	std::string filePathStd = pathTextures + "maps\\" + "skymap" + ".dds";
-	std::wstring filePath;
-	inspireUtils.StringToWString( filePath, filePathStd );
-
-	HRESULT hr = D3DX11CreateShaderResourceViewFromFile(
-		&d3d11Device,
-		filePath.c_str( ),
-		NULL,
-		NULL,
-		&this->skyboxTexture,
-		NULL );
-		*/
 }
 
 DXShaderManager::~DXShaderManager( )
