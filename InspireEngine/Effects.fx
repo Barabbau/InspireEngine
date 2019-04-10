@@ -103,21 +103,26 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		// Albedo
 		diffuse = ObjTexture.Sample( ObjSamplerState, input.TexCoord );
 
+		// Color Saturation
+		float saturationValue = 1.3f;
 		float3  LuminanceWeights = float3( 0.299f, 0.587f, 0.114f );
 
 		float    luminance = dot( diffuse, LuminanceWeights );
-		diffuse = lerp( luminance, diffuse, float4( 1.4f, 1.4f, 1.4f, 1.0f ) );
+		diffuse = lerp( luminance, diffuse, float4( saturationValue, saturationValue, saturationValue, 1.0f ) );
 
 		// Sample the pixel in the bump map.
-		float3 textureNormal = ObjNormal.SampleLevel( ObjSamplerState, input.TexCoord, 0 ).xyz;// 4 * ( 1.0f - diffuse.r ) ).xyz;
-		textureNormal = ( textureNormal * 2.0f ) - 1.0f;
+		float3 textureNormal = ObjNormal.SampleLevel( ObjSamplerState, input.TexCoord, 4 * ( 1.0f - diffuse.g ) ).xyz;
+		textureNormal = normalize( ( textureNormal * 2.0f ) - 1.0f );
 
+		// Move to tangentspace
 		bumpNormal = normalize( mul( textureNormal, input.WorldToTangentSpace ) );
-			
+
+		// Reflect and fip z to sample cubemap
 		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal ); //input.WorldToTangentSpace[ 2 ] );// Normal are reblended with model normals
 		cubeSampCoords.z = -cubeSampCoords.z;
 
-		SkyColor = SkyMap.SampleLevel( ObjSamplerState, cubeSampCoords, diffuse.r * 6 ).xyz * diffuse.g;
+		SkyColor = SkyMap.SampleLevel( ObjSamplerState, cubeSampCoords, diffuse.r * 6 ).xyz * diffuse.b;
+		//return float4( SkyColor, 1.0f );
 	}
 
 	//Find the distance between the light pos and pixel pos
@@ -129,25 +134,25 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	//If pixel is too far, return pixel color with ambient light
 	if ( d > light.range )
 	{
-		//return float4( bumpNormal, 1.0f );
-		float R = dot( normalize( lightToPixelVec ), bumpNormal );
+		float R = ( dot( normalize( lightToPixelVec ), bumpNormal ) ) * 0.255;
 
-		return float4( finalAmbient + SkyColor * R * light.ambient, diffuse.a );
+		return float4( ( finalAmbient + SkyColor * R), diffuse.a ); //finalAmbient + SkyColor * R * light.ambient, diffuse.a );
 	}
 
-	//Turn lightToPixelVec into a unit length vector describing
-	//the pixels direction from the lights position
-	lightToPixelVec /= d;
+	// renormalizing as previous statement is a return;
+	lightToPixelVec = normalize( lightToPixelVec );
 
 	//Calculate how much light the pixel gets by the angle
 	//in which the light strikes the pixels surface
-	float howMuchLight = dot( lightToPixelVec, bumpNormal );
+	//shift to positive space
+	float howMuchLight = 2.0f + dot( lightToPixelVec, bumpNormal );
 
 	//If light is striking the front side of the pixel
 	if ( howMuchLight > 0.0f )
 	{
+		howMuchLight = howMuchLight * 0.295;
 		//Add light to the finalColor of the pixel
-		finalColor += diffuse * light.diffuse * howMuchLight * 0.65 + ( SkyColor * ( howMuchLight * 0.4 ) );
+		finalColor += lerp( SkyColor, diffuse * light.diffuse, howMuchLight ); //( diffuse * light.diffuse * SkyColor ) * howMuchLight;
 
 		//Calculate Light's Distance Falloff factor
 		finalColor /= ( light.att[ 0 ] + ( light.att[ 1 ] * d ) ) + ( light.att[ 2 ] * ( d * d ) );

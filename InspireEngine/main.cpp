@@ -508,7 +508,7 @@ void DetectInput( double time )
 	if ( keyboardState[ DIK_ESCAPE ] & 0x80 )
 		PostMessage( hwnd, WM_DESTROY, 0, 0 );
 
-	float speed = 15.0f * time;
+	float speed = 5.0f * time;
 
 	if ( keyboardState[ DIK_A ] & 0x80 )
 	{
@@ -891,12 +891,12 @@ bool InitScene( )
 	_light->dir = XMFLOAT3( 0.0f, 0.0f, 1.0f );
 	_light->range = 80.0f;
 	_light->cone = 20.0f;
-	_light->att = XMFLOAT3( 0.5f, 0.05f, 0.0001f );
+	_light->att = XMFLOAT3( 0.78f, 0.005f, 0.001f );
 	_light->ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
 	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 0.7f, 1.0f );
 
 
-
+	
 
 	// Create the GROUND PLANE
 	std::vector<DXVertex> *vVector = new std::vector<DXVertex>( );
