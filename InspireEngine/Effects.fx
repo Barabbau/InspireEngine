@@ -111,7 +111,7 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		diffuse = lerp( luminance, diffuse, float4( saturationValue, saturationValue, saturationValue, 1.0f ) );
 
 		// Sample the pixel in the bump map.
-		float3 textureNormal = ObjNormal.SampleLevel( ObjSamplerState, input.TexCoord, 0 ).xyz; //4 * ( 1.0f - diffuse.g ) ).xyz;
+		float3 textureNormal = ObjNormal.Sample( ObjSamplerState, input.TexCoord).xyz; //4 * ( 1.0f - diffuse.g ) ).xyz;
 		float g = textureNormal.b;
 		textureNormal.b = -g;
 		textureNormal = ( ( textureNormal * 2.0f ) - 1.0f );
@@ -124,7 +124,7 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal ); //input.WorldToTangentSpace[ 2 ] );// Normal are reblended with model normals
 		cubeSampCoords.z = -cubeSampCoords.z;
 
-		SkyColor = SkyMap.SampleLevel( ObjSamplerState, cubeSampCoords, diffuse.r * 6 ).xyz * (1 - diffuse.r);
+		SkyColor = SkyMap.Sample( ObjSamplerState, cubeSampCoords) * ( 1 - diffuse.r ); //, diffuse.r * 6 ).xyz * (1 - diffuse.r);
 		//return float4( SkyColor, 1.0f );
 	}
 
