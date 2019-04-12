@@ -889,9 +889,9 @@ bool InitScene( )
 
 	_light->pos = XMFLOAT3( 0.0f, 1.0f, 0.0f );
 	_light->dir = XMFLOAT3( 0.0f, 0.0f, 1.0f );
-	_light->range = 80.0f;
-	_light->cone = 20.0f;
-	_light->att = XMFLOAT3( 0.78f, 0.005f, 0.001f );
+	_light->range = 120.0f;
+	_light->cone = 10.0f;
+	_light->att = XMFLOAT3( 0.68f, 0.0005f, 0.000001f );
 	_light->ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
 	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 0.7f, 1.0f );
 

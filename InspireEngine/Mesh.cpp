@@ -12,11 +12,133 @@ Mesh::~Mesh( )
 	//ctor
 }
 
+/// <summary>
+/// Calculate Mesh Tangents
+/// </summary>
 void Mesh::ComputeTangents( )
 {
-	this->tangents = std::vector<XMFLOAT3>( this->normals.size( ), XMFLOAT3(0, 0, 0 ) );
-	this->binormals = std::vector<XMFLOAT3>( this->normals.size( ), XMFLOAT3( 0, 0, 0 ) );
+	this->tangents = std::vector<XMFLOAT3>( this->vertices.size( ), XMFLOAT3(0, 0, 0 ) );
+	this->binormals = std::vector<XMFLOAT3>( this->vertices.size( ), XMFLOAT3( 0, 0, 0 ) );
 
+	/*
+	// Speed up math by copying the mesh arrays.
+	std::vector<INT32> triangles;
+
+	// Speed up math by copying the mesh arrays.
+	for ( size_t i = 0; i < this->Faces.size( ); i++ )
+	{
+		const DXFace &face = this->Faces.at( i );
+
+		triangles.push_back( face.indexes[ 0 ] );
+		triangles.push_back( face.indexes[ 1 ] );
+		triangles.push_back( face.indexes[ 2 ] );
+	}
+	
+	if ( this->vertices.size() == 0 || this->uvs.size( ) == 0 || this->normals.size( ) == 0 )
+	{
+		return;
+	}
+
+	// Variable Definitions
+	int triangleCount = this->Faces.size( ) * 3;
+	int vertexCount = this->vertices.size( );
+
+	std::vector<XMFLOAT3> tan1;
+	std::vector<XMFLOAT3>  tan2;
+	std::vector<XMFLOAT4> newTangets;
+
+	for ( INT a = 0; a < vertexCount; a++ )
+	{
+		XMFLOAT3 zeroValue = XMFLOAT3( 0, 0, 0 );
+
+		tan1.push_back( zeroValue );
+		tan2.push_back( zeroValue );
+
+		newTangets.push_back( XMFLOAT4( 0, 0, 0, 0 ) );
+	}
+
+	for ( size_t i = 0; i < this->Faces.size( ); i++ )
+	{
+		const DXFace &face = this->Faces.at( i );
+
+		XMFLOAT3 v1 = this->vertices.at( face.indexes[ 0 ] );
+		XMFLOAT3 v2 = this->vertices.at( face.indexes[ 1 ] );
+		XMFLOAT3 v3 = this->vertices.at( face.indexes[ 2 ] );
+
+		XMFLOAT2 w1 = this->uvs.at( face.uvIndexes[ 0 ]);
+		XMFLOAT2 w2 = this->uvs.at( face.uvIndexes[ 1 ] );
+		XMFLOAT2 w3 = this->uvs.at( face.uvIndexes[ 2 ] );
+
+		float x1 = v2.x - v1.x;
+		float x2 = v3.x - v1.x;
+		float y1 = v2.y - v1.y;
+		float y2 = v3.y - v1.y;
+		float z1 = v2.z - v1.z;
+		float z2 = v3.z - v1.z;
+
+		float s1 = w2.x - w1.x;
+		float s2 = w3.x - w1.x;
+		float t1 = w2.y - w1.y;
+		float t2 = w3.y - w1.y;
+
+		float div = ( s1 * t2 ) - ( s2 * t1 );
+		float r = abs( div ) < 0.001f ? 0.0f : 1.0f / div;
+
+		XMFLOAT3 sdir = XMFLOAT3( ( ( t2 * x1 ) - ( t1 * x2 ) ) * r, ( ( t2 * y1 ) - ( t1 * y2 ) ) * r, ( ( t2 * z1 ) - ( t1 * z2 ) ) * r );
+		XMFLOAT3 tdir = XMFLOAT3( ( ( s1 * x2 ) - ( s2 * x1 ) ) * r, ( ( s1 * y2 ) - ( s2 * y1 ) ) * r, ( ( s1 * z2 ) - ( s2 * z1 ) ) * r );
+
+		tan1.at( face.indexes[ 0 ] ).x += sdir.x;
+		tan1.at( face.indexes[ 0 ] ).y += sdir.y;
+		tan1.at( face.indexes[ 0 ] ).z += sdir.z;
+
+		tan1.at( face.indexes[ 1 ] ).x += sdir.x;
+		tan1.at( face.indexes[ 1 ] ).y += sdir.y;
+		tan1.at( face.indexes[ 1 ] ).z += sdir.z;
+
+		tan1.at( face.indexes[ 2 ] ).x += sdir.x;
+		tan1.at( face.indexes[ 2 ] ).y += sdir.y;
+		tan1.at( face.indexes[ 2 ] ).z += sdir.z;
+
+		tan2.at( face.indexes[ 0 ] ).x += tdir.x;
+		tan2.at( face.indexes[ 0 ] ).y += tdir.y;
+		tan2.at( face.indexes[ 0 ] ).z += tdir.z;
+
+		tan2.at( face.indexes[ 1 ] ).x += tdir.x;
+		tan2.at( face.indexes[ 1 ] ).y += tdir.y;
+		tan2.at( face.indexes[ 1 ] ).z += tdir.z;
+
+		tan2.at( face.indexes[ 2 ] ).x += tdir.x;
+		tan2.at( face.indexes[ 2 ] ).y += tdir.y;
+		tan2.at( face.indexes[ 2 ] ).z += tdir.z;
+	//}
+
+		for ( INT a = 0; a < 3; ++a )
+		{
+			XMVECTOR n = XMLoadFloat3( &this->normals.at( a ) );
+			XMVECTOR t = XMLoadFloat3( &tan1.at( a ) );
+
+			XMVECTOR tmp = XMVector3Normalize( t - ( n * XMVector3Dot( n, t ) ) );
+
+			//XMFLOAT3 zero = XMFLOAT3( 0, 0, 0 );
+			//float w = XMVector3GreaterOrEqual( XMVector3Dot( XMVector3Cross( n, t ), XMLoadFloat3( &tan2.at( a ) ) ), XMLoadFloat3( &zero ) ) ? 1.0f : -1.0f;
+			this->tangents.at( face.indexes[ a ] ) = XMFLOAT3(
+				XMVectorGetByIndex( tmp, 0 ),
+				XMVectorGetByIndex( tmp, 1 ),
+				XMVectorGetByIndex( tmp, 2 )
+			);
+		}
+	}
+
+	for ( size_t i = 0; i < this->tangents.size( ); i++ )
+	{
+		XMVECTOR vector = XMLoadFloat3( &this->tangents[ i ] );
+		vector = XMVector3Normalize( vector );
+		XMFLOAT3 normalizedValue;
+		XMStoreFloat3( &normalizedValue, vector );
+		this->tangents[ i ] = normalizedValue;
+	}
+	*/
+	
 	for ( size_t i = 0; i < this->Faces.size( ); i++ )
 	{
 		const DXFace &face = this->Faces.at( i );
@@ -57,19 +179,6 @@ void Mesh::ComputeTangents( )
 
 			XMFLOAT3 tangentF;
 			XMStoreFloat3( &tangentF, tangent );
-
-			if ( ( tangentF.x ) < 0.0f )
-			{
-				tangentF.x = tangentF.x * -1.0f;
-			}
-			if ( ( tangentF.y ) < 0.0f )
-			{
-				tangentF.y = tangentF.y * -1.0f;
-			}
-			if ( ( tangentF.z ) < 0.0f )
-			{
-				tangentF.z = tangentF.z * -1.0f;
-			}
 
 			tangent = XMVector3Normalize( tangent - XMVector3Dot( tangent, normal ) * normal );
 			for ( size_t nIndex = 0; nIndex < 3; nIndex++ )
