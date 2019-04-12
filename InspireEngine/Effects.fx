@@ -113,9 +113,10 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		// Sample the pixel in the bump map.
 		float3 textureNormal = ObjNormal.Sample( ObjSamplerState, input.TexCoord).xyz; //4 * ( 1.0f - diffuse.g ) ).xyz;
 		float g = textureNormal.b;
-		textureNormal.b = -g;
+
 		textureNormal = ( ( textureNormal * 2.0f ) - 1.0f );
 		textureNormal.b = -g * 0.5;
+		textureNormal = normalize( textureNormal );
 
 		// Move to tangentspace
 		bumpNormal = normalize( mul( textureNormal, input.WorldToTangentSpace ) );
