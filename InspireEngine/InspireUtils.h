@@ -18,7 +18,7 @@
 #include "DXShaderManager.h"
 #include "SurfaceMaterial.h"
 #include "Light.h"
-//#include "EditorMeshPtr.h"
+
 
 class InspireUtils
 {

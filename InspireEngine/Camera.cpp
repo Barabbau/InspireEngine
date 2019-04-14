@@ -5,8 +5,10 @@
 //Camera information
 Camera::Camera( float Width, float Height )
 {
+	float positionScaler = 3.048f;
+
 	//Camera information
-	CamPosition = XMVectorSet( 0.0f, 1.83f, -24.0f, 0.0f );
+	CamPosition = XMVectorSet( 0.0f, 1.83f / positionScaler, -24.0f, 0.0f );
 	CamTarget = XMVectorSet( 0.0f, 0.0f, 0.0f, 0.0f );
 	camUp = XMVectorSet( 0.0f, 1.0f, 0.0f, 0.0f );
 
@@ -14,7 +16,7 @@ Camera::Camera( float Width, float Height )
 	CamView = XMMatrixLookAtLH( CamPosition, CamTarget, camUp );
 
 	//Set the Projection matrix
-	CamProjection = XMMatrixPerspectiveFovLH( 0.4f * 3.14f, Width / Height, 0.1f, 1000.0f );
+	CamProjection = XMMatrixPerspectiveFovLH( 0.4f * 3.14f, Width / Height, 0.01f, 1000.0f );
 }
 
 Camera::Camera( )

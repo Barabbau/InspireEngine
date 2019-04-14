@@ -199,9 +199,6 @@ INT32 MeshDX::AddVertexBuffer(
 			// tangents
 			tempVert.tangent = this->_originalObject3D->tangents[ idsTangentsDictionary[ index ] ];
 
-			// tangents
-			//tempVert.binormal = this->_originalObject3D->binormals[ idsTangentsDictionary[ index ] ];
-
 			vertexData.push_back( tempVert );
 
 			foundIndex++;
@@ -398,9 +395,9 @@ void MeshDX::Draw(
 	XMMATRIX meshWorld = XMMatrixIdentity( );
 
 	//Define world space matrix
-	XMMATRIX Rotation = XMMatrixRotationY( rot.y );
+	XMMATRIX Rotation = XMMatrixRotationRollPitchYaw( rot.x, rot.y, rot.z );  //XMMatrixRotationY( rot.y );
 	XMMATRIX Scale = XMMatrixScaling( scale.x, scale.y, scale.z );
-	XMMATRIX Translation = XMMatrixTranslation( pos.x, pos.y, pos.z );
+	XMMATRIX Translation = XMMatrixTranslation( pos.x, pos.y, -pos.z );
 
 	meshWorld = Scale * Rotation * Translation;
 	

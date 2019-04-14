@@ -14,7 +14,7 @@ g ROAD_Beach Mesh
 #
 # ROAD_Beach Mesh_Mat_Rock
 #
-usemtl ROAD_Beach Mesh_Mat_Rock
+usemtl TEX_Rock
 
 v -218.712784 -10.415469 502.635712
 v -209.290955 -10.661084 502.821320
@@ -5949,7 +5949,7 @@ f 2900/787/1257 2843/664/1034 2839/663/1131
 #
 # ROAD_Beach Mesh_Mat_Sand
 #
-usemtl ROAD_Beach Mesh_Mat_Sand
+usemtl TEX_Sand
 
 v -218.712784 -10.415469 502.635712
 v -209.290955 -10.661084 502.821320

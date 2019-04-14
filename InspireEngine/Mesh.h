@@ -27,7 +27,6 @@ struct DXVertex	//Overloaded Vertex Structure
 	XMFLOAT2 texCoord;
 	XMFLOAT3 normal;
 	XMFLOAT3 tangent;
-	//XMFLOAT3 binormal;
 };
 
 struct DXFace
@@ -74,9 +73,7 @@ class Mesh
 	std::vector<XMFLOAT3> vertices;
 	std::vector<XMFLOAT3> normals;
 	std::vector<XMFLOAT3> tangents;
-	std::vector<XMFLOAT3> binormals;
 	std::vector<XMFLOAT2> uvs;
-	
 
 	private:
 };

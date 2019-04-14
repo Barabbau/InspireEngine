@@ -14,7 +14,7 @@ g ROAD_DockWall_001 Mesh
 #
 # ROAD_DockWall_001 Mesh_Mat_BricksA
 #
-usemtl ROAD_DockWall_001 Mesh_Mat_BricksA
+usemtl GD_paver02
 
 v -492.126099 24.461073 -121.215340
 v -409.882141 24.461077 -121.215340

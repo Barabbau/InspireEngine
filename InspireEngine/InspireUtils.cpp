@@ -43,6 +43,16 @@ std::vector<std::string> InspireUtils::split( const std::string &s, char delim )
 }
 
 
+/// <summary>
+/// Verifies the existence of a file
+/// </summary>
+/// <param name="name">file path</param>
+/// <returns>true if a file exists</returns>
+inline bool exists( const std::string& name )
+{
+	std::ifstream f( name.c_str( ) );
+	return f.good( );
+}
 
 /// <summary>
 /// Reads & load the material for the OBJ file
@@ -102,6 +112,16 @@ bool InspireUtils::ReadMaterialIdName(
 			SurfaceMaterial newMaterial = SurfaceMaterial( );
 
 			std::string filePathStd = pathModels + "maps\\" + strLineName + ".dds";
+
+			if ( !exists( filePathStd ) )
+			{
+				//std::cout << "File not found : " << filePathStd << '\n';
+				std::string debugOutputString = "ALBEDO File not found : " + filePathStd + '\n';
+				std::wstring debugOutput;
+				StringToWString( debugOutput, debugOutputString );
+				OutputDebugString( debugOutput.c_str( ) );
+				filePathStd = pathModels + "maps\\missing_texture.dds";
+			}
 			std::wstring filePath;
 			StringToWString( filePath, filePathStd );
 
@@ -115,6 +135,16 @@ bool InspireUtils::ReadMaterialIdName(
 
 
 			std::string filePathNormal = pathModels + "maps\\" + strLineName + "_Normal.dds";
+
+			if ( !exists( filePathNormal ) )
+			{
+				//std::cout << "File not found : " << filePathNormal << '\n';
+				std::string debugOutputString = "NORMAL File not found : " + filePathNormal + '\n';
+				std::wstring debugOutput;
+				StringToWString( debugOutput, debugOutputString );
+				OutputDebugString( debugOutput.c_str() );
+				filePathNormal = pathModels + "maps\\missing_Normal.dds";
+			}
 			std::wstring normalPath;
 			StringToWString( normalPath, filePathNormal );
 
@@ -223,14 +253,18 @@ bool InspireUtils::ObjRead(
 		if ( !in )
 		{
 			std::cerr << "Cannot open " << objName << std::endl;
-			exit( 1 );
+			std::string debugOutputString = "MODEL File not found : " + objName + '\n';
+			std::wstring debugOutput;
+			StringToWString( debugOutput, debugOutputString );
+			OutputDebugString( debugOutput.c_str( ) );
+			return false;
+//			exit( 1 );
 		}
 		std::string lineTemp;
 		while ( std::getline( in, lineTemp ) )
 		{
 			lines.push_back( lineTemp );
 		}
-
 
 		bool hasFoundMaterial = false;
 

@@ -173,8 +173,7 @@ EditorMesh::EditorMesh(
 	}
 	else
 	{
-		MessageBox( 0, L"Scene Initialization - Failed",
-			L"Error", MB_OK );
+//		MessageBox( 0, L"Scene Initialization - Failed", L"Error", MB_OK );
 		return;
 	}
 }

@@ -37,7 +37,7 @@
 #include "SurfaceMaterial.h"
 #include "EditorMesh.h"
 #include "EditorMeshInstanced.h"
-
+#include "SceneGraph.h"
 
 
 //Global Declarations - Interfaces//
@@ -150,7 +150,9 @@ std::vector<SurfaceMaterial> _materialsList;
 EditorMeshInstanced* editorMeshInstanced;
 std::vector<EditorMeshPtr> *_lstEditorObject3Ds;
 InspireUtils* _inspireUtils;
-EditorMesh* groundPlane;
+EditorMesh* _groundPlane;
+SceneGraph* _sceneGraph;
+
 
 //Function Prototypes//
 bool InitializeDirect3d11App( HINSTANCE hInstance );
@@ -508,7 +510,7 @@ void DetectInput( double time )
 	if ( keyboardState[ DIK_ESCAPE ] & 0x80 )
 		PostMessage( hwnd, WM_DESTROY, 0, 0 );
 
-	float speed = 5.0f * time;
+	float speed = 2.5f * time;
 
 	if ( keyboardState[ DIK_A ] & 0x80 )
 	{
@@ -893,7 +895,7 @@ bool InitScene( )
 	_light->cone = 10.0f;
 	_light->att = XMFLOAT3( 0.68f, 0.0005f, 0.000001f );
 	_light->ambient = XMFLOAT4( 0.2f, 0.2f, 0.2f, 1.0f );
-	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 0.7f, 1.0f );
+	_light->diffuse = XMFLOAT4( 1.0f, 1.0f, 1.0f, 1.0f );
 
 
 	
@@ -901,25 +903,25 @@ bool InitScene( )
 	// Create the GROUND PLANE
 	std::vector<DXVertex> *vVector = new std::vector<DXVertex>( );
 
-	float groundSize = 500.0f;
-	vVector->push_back( DXVertex( -groundSize, 0.0f, -groundSize, 1000.0f, 1000.0f, 0.0f, 1.0f, 0.0f ) );
-	vVector->push_back( DXVertex( groundSize, 0.0f, -groundSize, 0.0f, 1000.0f, 0.0f, 1.0f, 0.0f ) );
+	float groundSize = 5000.0f;
+	vVector->push_back( DXVertex( -groundSize, 0.0f, -groundSize, groundSize * 2, groundSize * 2, 0.0f, 1.0f, 0.0f ) );
+	vVector->push_back( DXVertex( groundSize, 0.0f, -groundSize, 0.0f, groundSize * 2, 0.0f, 1.0f, 0.0f ) );
 	vVector->push_back( DXVertex( groundSize, 0.0f, groundSize, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f ) );
-	vVector->push_back( DXVertex( -groundSize, 0.0f, groundSize, 1000.0f, 0.0f, 0.0f, 1.0f, 0.0f ) );
+	vVector->push_back( DXVertex( -groundSize, 0.0f, groundSize, groundSize * 2, 0.0f, 0.0f, 1.0f, 0.0f ) );
 
 	std::vector<DWORD> *indicesVector = new std::vector<DWORD>();
 	indicesVector->push_back( 2 ); indicesVector->push_back( 1 );	indicesVector->push_back( 0 );
 	indicesVector->push_back( 3 ); indicesVector->push_back( 2 );	indicesVector->push_back( 0 );
 
-	groundPlane = new EditorMesh( *d3d11DevCon,
+	_groundPlane = new EditorMesh( *d3d11DevCon,
 								  *d3d11Device,
 								  "grondPlane",
 								  ".\\Resources\\",
-								  "GD_Grass02",
+								  "Prop_Water",
 								  *vVector,
 								  *indicesVector,
 								  XMFLOAT3( 0, 0, 0 ),
-								  XMFLOAT3( 0, 0, 0 ),
+								  XMFLOAT3( 0, -1, 0 ),
 								  XMFLOAT3( 1.0f, 1.0f, 1.0f ),
 								false,
 								_materialsList,
@@ -979,10 +981,13 @@ bool InitScene( )
 	XMFLOAT3 maxPoint;
 	XMFLOAT3 pos = XMFLOAT3( 0.0f, 0.5f, 0.0f );
 	XMFLOAT3 rot = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	XMFLOAT3 scale = XMFLOAT3( 1.0f, 1.0f, 1.0f );
+
+
+	float scaleF = 0.1f;// 3.048f;//float scaler = 304.8f;
+	XMFLOAT3 scale = XMFLOAT3( scaleF, scaleF, scaleF );
 	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
 											*d3d11Device,
-											"Building_11stores_Pyramid.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
+											"UDC_Fountain.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
 											".\\Resources",
 											rot,
 											pos,
@@ -995,6 +1000,16 @@ bool InitScene( )
 											*_light,
 											*_inspireUtils );
 
+	_sceneGraph = new SceneGraph( *d3d11DevCon,
+											*d3d11Device,
+											".\\Resources\\CityA.xml",
+											_materialsList,
+											*_lstEditorObject3Ds,
+											*_camera,
+											*_shaderManager,
+											*_light,
+											*_inspireUtils );
+	//_camera->CamPosition = XMLoadFloat3( &_sceneGraph->InstancedObjects->end( )._Ptr->_Myval.second->_spawnPoints->at( 0 )->position );// InstancedObjects->end( )._Ptr->_Myval.second->_spawnPoints.at( 0 ));
 
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory( &blendDesc, sizeof( blendDesc ) );
@@ -1032,15 +1047,8 @@ bool InitScene( )
 	blendDesc.RenderTarget[ 0 ] = rtbd;
 
 	d3d11Device->CreateBlendState( &blendDesc, &Transparency );
-	///////////////**************new**************////////////////////
-	/*
-	hr = D3DX11CreateShaderResourceViewFromFile( d3d11Device, L".\\Resources\\maps\\GD_Grass02.dds",
-												 NULL, NULL, &GroundAldebo, NULL );
 
-	hr = D3DX11CreateShaderResourceViewFromFile( d3d11Device, L".\\Resources\\maps\\GD_Grass02_Normal.dds",
-											 NULL, NULL, &GroundNormal, NULL );
 
-											 */
 	///Load Skymap's cube texture///
 	D3DX11_IMAGE_LOAD_INFO loadSMInfo;
 	loadSMInfo.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
@@ -1258,19 +1266,22 @@ void DrawScene( )
 	//////////////////////////////////////////////////////////////////
 	//Draw our model's NON-transparent subsets
 	d3d11DevCon->RSSetState( CWcullMode );
-
-	groundPlane->RenderObject(
+	//d3d11DevCon->RSSetState( RSCullNone );
+	
+	_groundPlane->RenderObject(
 							*d3d11DevCon,
 							VP,
 							_materialsList,
 							*_lstEditorObject3Ds,
 							*_shaderManager,
-							groundPlane->rotation,
-							groundPlane->position,
-							groundPlane->scale,
+							_groundPlane->rotation,
+							_groundPlane->position,
+							_groundPlane->scale,
 							*_light );
-
+							
 	editorMeshInstanced->RenderInstanced( VP );
+
+	_sceneGraph->Render( VP );
 	//////////////////////////////////////////////////////////////////
 	
 	

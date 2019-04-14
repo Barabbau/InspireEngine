@@ -50,7 +50,6 @@ struct SKYMAP_VS_OUTPUT	//output structure for skymap vertex shader
 };
 
 VS_OUTPUT VS( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT )
-//VS_OUTPUT VS(float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT, float3 binormal : BINORMAL )
 {
     VS_OUTPUT output;
 
@@ -68,7 +67,6 @@ VS_OUTPUT VS( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 norm
 }
 
 VS_OUTPUT VS_Instanced( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT, uint instanceID : SV_InstanceID )
-//VS_OUTPUT VS_Instanced( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, float3 normal : NORMAL, float3 tangent : TANGENT, float3 binormal : BINORMAL, uint instanceID : SV_InstanceID )
 {
 	VS_OUTPUT output;
 
@@ -87,6 +85,8 @@ VS_OUTPUT VS_Instanced( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, f
 
 float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 {
+	
+
 	//Set diffuse color of material
 	float4 diffuse = tintColor;
 	float3 SkyColor = float3( 1.0f, 1.0f, 1.0f );
@@ -102,6 +102,7 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	{
 		// Albedo
 		diffuse = ObjTexture.Sample( ObjSamplerState, input.TexCoord );
+		clip( diffuse.a < 0.1f ? -1 : 1 );
 
 		// Color Saturation
 		float saturationValue = 1.3f;
@@ -115,7 +116,7 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		float g = textureNormal.b;
 
 		textureNormal = ( ( textureNormal * 2.0f ) - 1.0f );
-		textureNormal.b = -g * 0.5;
+		textureNormal.b = -g;
 		textureNormal = normalize( textureNormal );
 
 		// Move to tangentspace
@@ -125,8 +126,10 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal ); //input.WorldToTangentSpace[ 2 ] );// Normal are reblended with model normals
 		cubeSampCoords.z = -cubeSampCoords.z;
 
-		SkyColor = SkyMap.Sample( ObjSamplerState, cubeSampCoords) * ( 1 - diffuse.r ); //, diffuse.r * 6 ).xyz * (1 - diffuse.r);
+		SkyColor = SkyMap.Sample( ObjSamplerState, cubeSampCoords)  * ( 1.0 - diffuse.r ) * 0.3; //, diffuse.r * 6 ).xyz * (1 - diffuse.r);
 		//return float4( SkyColor, 1.0f );
+
+		//finalColor += SkyColor;
 	}
 
 	//Find the distance between the light pos and pixel pos
@@ -147,7 +150,7 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	{
 		howMuchLight = howMuchLight;
 		//Add light to the finalColor of the pixel
-		finalColor += ( ( SkyColor * diffuse * light.diffuse ) * ( howMuchLight) );
+		finalColor += ( SkyColor * howMuchLight + diffuse * light.diffuse * howMuchLight );// ( ( SkyColor * diffuse * light.diffuse ) * ( 2 * howMuchLight) );
 
 		//Calculate Light's Distance Falloff factor
 		finalColor /= ( light.att[ 0 ] + ( light.att[ 1 ] * d ) ) + ( light.att[ 2 ] * ( d * d ) );

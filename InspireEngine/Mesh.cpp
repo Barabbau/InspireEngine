@@ -17,8 +17,7 @@ Mesh::~Mesh( )
 /// </summary>
 void Mesh::ComputeTangents( )
 {
-	this->tangents = std::vector<XMFLOAT3>( this->vertices.size( ), XMFLOAT3(0, 0, 0 ) );
-	this->binormals = std::vector<XMFLOAT3>( this->vertices.size( ), XMFLOAT3( 0, 0, 0 ) );
+	this->tangents = std::vector<XMFLOAT3>( this->normals.size( ), XMFLOAT3(0, 0, 0 ) );
 
 	/*
 	// Speed up math by copying the mesh arrays.
@@ -184,14 +183,7 @@ void Mesh::ComputeTangents( )
 			for ( size_t nIndex = 0; nIndex < 3; nIndex++ )
 			{
 				this->tangents.at( face.normalIndexes[ b + nIndex ] ) = tangentF;
-			}
-
-			XMFLOAT3 binormalF;
-			XMStoreFloat3( &binormalF, binormal );
-			for ( size_t nIndex = 0; nIndex < 3; nIndex++ )
-			{
-				this->binormals.at( face.normalIndexes[ b + nIndex ] ) = binormalF;
-			}			
+			}	
 		}
 	}
 
@@ -202,12 +194,6 @@ void Mesh::ComputeTangents( )
 		XMFLOAT3 normalizedValue;
 		XMStoreFloat3( &normalizedValue, vector );
 		this->tangents[ i ] = normalizedValue;
-
-		XMVECTOR vectorBi = XMLoadFloat3( &this->binormals[ i ] );
-		vectorBi = XMVector3Normalize( vectorBi );
-		XMFLOAT3 normalizedValueBi;
-		XMStoreFloat3( &normalizedValueBi, vectorBi );
-		this->binormals[ i ] = normalizedValueBi;
 	}
 }
 

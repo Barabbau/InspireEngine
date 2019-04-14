@@ -37,6 +37,7 @@ class EditorMeshInstanced : public EditorMesh
 	);
 	~EditorMeshInstanced( );
 
+	void AddSpawnPoint( XMFLOAT3 position, XMFLOAT3 rotation, XMFLOAT3 scale );
 	void CleanTransforms( );
 	void CreateTransforms( );
 	void RenderInstanced( XMMATRIX viewProjection );
@@ -54,13 +55,9 @@ class EditorMeshInstanced : public EditorMesh
 	DXShaderManager &_shaderManager;
 
 	std::vector<std::vector<XMMATRIX>> *_transforms;
-
 	std::vector<SpawnPointPtr> *_spawnPoints;
 
 	Light &_light;
-
-
-	//std::vector<XMMATRIX> listM;
 
 	private:
 

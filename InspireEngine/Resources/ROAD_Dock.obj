@@ -14,7 +14,7 @@ g ROAD_Dock_001 Mesh
 #
 # ROAD_Dock_001 Mesh_Mat_GroundTile6
 #
-usemtl ROAD_Dock_001 Mesh_Mat_GroundTile6
+usemtl GD_paver06
 
 v -327.638275 0.329917 -48.025269
 v -409.882172 0.329917 -48.025269
@@ -279,7 +279,7 @@ f 53/29/22 40/28/46 70/59/44
 #
 # ROAD_Dock_001 Mesh_Mat_SideWalk
 #
-usemtl ROAD_Dock_001 Mesh_Mat_SideWalk
+usemtl RD_SideWalk
 
 v -327.638275 0.329917 -48.025269
 v -409.882172 0.329917 -48.025269

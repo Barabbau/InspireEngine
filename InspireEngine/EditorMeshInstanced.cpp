@@ -21,17 +21,7 @@ EditorMeshInstanced::EditorMeshInstanced(
 EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, rot, pos, scale, useBboxLod, materialsList, lstEditorObject3Ds, shaderManager, light, inspireUtils )
 {
 	this->_spawnPoints = new std::vector<SpawnPointPtr>( );
-
-	for ( size_t i = 0; i < 50; i++ )
-	{
-		SpawnPoint* p = new SpawnPoint( );
-		p->position = XMFLOAT3( i * 20.0f, 0.02f, i );
-		p->rotation = XMFLOAT3( 0.0f, 0.0f, 0.0f );
-		p->scale = XMFLOAT3( 1.0f, 1.0f, 1.0f );
-
-		SpawnPointPtr firstPoint( p );
-		this->_spawnPoints->push_back( firstPoint );
-	}
+	this->AddSpawnPoint( pos, rot, scale );
 
 	this->_transforms = new std::vector<std::vector<XMMATRIX>>( );
 	this->CreateTransforms( );
@@ -39,6 +29,17 @@ EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, rot, pos, scale, use
 
 EditorMeshInstanced::~EditorMeshInstanced( )
 {
+}
+
+void EditorMeshInstanced::AddSpawnPoint( XMFLOAT3 position, XMFLOAT3 rotation, XMFLOAT3 scale )
+{
+	SpawnPoint* spawnPoint = new SpawnPoint( );
+	spawnPoint->position = position;//XMFLOAT3( 0.0f, 0.0f, 0.0f ); //position;// XMFLOAT3( i * 20.0f, 0.02f, i );
+	spawnPoint->rotation = rotation;// XMFLOAT3( 0.0f, 0.0f, 0.0f );
+	spawnPoint->scale = scale;//XMFLOAT3( 1.0f, 1.0f, 1.0f );// scale;// XMFLOAT3( 1.0f, 1.0f, 1.0f );
+
+	SpawnPointPtr point( spawnPoint );
+	this->_spawnPoints->push_back( point );
 }
 
 void EditorMeshInstanced::CleanTransforms( )
@@ -54,6 +55,8 @@ void EditorMeshInstanced::CleanTransforms( )
 
 void EditorMeshInstanced::CreateTransforms( )
 {
+	this->CleanTransforms( );
+
 	std::vector<XMMATRIX> transforms;
 	this->_transforms->push_back( transforms );
 
@@ -64,17 +67,19 @@ void EditorMeshInstanced::CreateTransforms( )
 		XMMATRIX meshWorld = XMMatrixIdentity( );
 
 		//Define world space matrix
-		XMMATRIX Rotation = XMMatrixRotationY( spawnPoint->rotation.y );
+		XMMATRIX Rotation = XMMatrixRotationRollPitchYaw( spawnPoint->rotation.x, spawnPoint->rotation.y, spawnPoint->rotation.z );
 		XMMATRIX Scale = XMMatrixScaling( spawnPoint->scale.x, spawnPoint->scale.y, spawnPoint->scale.z );
-		XMMATRIX Translation = XMMatrixTranslation( spawnPoint->position.x, spawnPoint->position.y, spawnPoint->position.z );
 
-		meshWorld = Rotation * Scale * Translation;
+		// invert z for left handed system
+		XMMATRIX Translation = XMMatrixTranslation( spawnPoint->position.x, spawnPoint->position.y, -spawnPoint->position.z );
+
+		meshWorld = Scale * Rotation * Translation;
 
 		// Pre transpose for Shader usage
 		meshWorld = XMMatrixTranspose( meshWorld );
 
 		// Create new list of transforms if we max out the size of the actual one
-		if ( this->_transforms->at( this->_transforms->size( ) - 1 ).size( ) > INSTANCE_LIMIT )
+		if ( this->_transforms->at( this->_transforms->size( ) - 1 ).size( ) >= INSTANCE_LIMIT )
 		{
 			std::vector<XMMATRIX> newTransforms;
 			this->_transforms->push_back( newTransforms );
@@ -107,7 +112,7 @@ void EditorMeshInstanced::RenderInstanced( XMMATRIX viewProjection )
 
 	if ( this->_transforms->size( ) > 1 )
 	{
-		this->Render( viewProjection, this->_transforms->size( ), _lastBatchSize );
+		this->Render( viewProjection, this->_transforms->size( ) - 1, _lastBatchSize );
 	}
 	else
 	{
@@ -131,7 +136,7 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 	INT32 distanceToTest = 100000;
 	INT32 distanceFromCamera = 100000;
 
-	if ( this->LodId != -1 )
+	//if ( this->LodId != -1 )
 	{
 		XMVECTOR cameraPosition = XMVectorSet(
 			XMVectorGetX( this->_camera.CamPosition ),
@@ -165,7 +170,8 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 	INT32 lodIndex = 0;
 
 	if ( distanceToTest >= this->lodSegments[ 0 ]
-		 && distanceToTest < this->lodSegments[ 1 ] )
+		 && distanceToTest < this->lodSegments[ 1 ]
+		 && this->LodId != -1 )
 	{
 		lodIndex = 1;
 	}
@@ -179,25 +185,11 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 		lodIndex = 3;
 	}
 
-	
-	//INT32 lodIndex = 0;
+	lodIndex = 0;
 	switch ( lodIndex )
 	{
 		case 0:
 		{
-			/*
-			this->_meshDx->Draw(
-				this->_d3d11DevCon, 
-				viewProjection,
-				this->_materialsList, 
-				this->_shaderManager,
-				this->rotation,
-				this->position,
-				this->scale,
-//				listM,//this->_transforms->at( index ),
-//				amount, 
-				this->_light );
-				*/
 			this->_meshDx->DrawInstanced(
 				this->_d3d11DevCon,
 				viewProjection,

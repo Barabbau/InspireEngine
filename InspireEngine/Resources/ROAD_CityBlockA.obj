@@ -12,9 +12,9 @@ g ROAD_CityBlockA Mesh
 
 
 #
-# ROAD_CityBlockA Mesh_Mat_1way4lane
+# RD_1way4lane
 #
-usemtl ROAD_CityBlockA Mesh_Mat_1way4lane
+usemtl RD_1way4lane
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -2325,9 +2325,9 @@ f 360/46/1 388/45/1 154/2/1
 f 154/2/1 153/3/1 360/46/1
 
 #
-# ROAD_CityBlockA Mesh_Mat_1way4laneN
+# RD_1way4laneN
 #
-usemtl ROAD_CityBlockA Mesh_Mat_1way4laneN
+usemtl RD_1way4laneN
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -4556,9 +4556,9 @@ f 2398/47/2 2397/48/2 2270/49/2
 f 2270/49/2 2269/50/2 2398/47/2
 
 #
-# ROAD_CityBlockA Mesh_Mat_1way4lanesND
+# RD_1way4lanesND
 #
-usemtl ROAD_CityBlockA Mesh_Mat_1way4lanesND
+usemtl RD_1way4laneND
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -6787,9 +6787,9 @@ f 4599/51/3 4598/52/3 4605/53/3
 f 4605/53/3 4606/54/3 4599/51/3
 
 #
-# ROAD_CityBlockA Mesh_Mat_2ways2lane
+# RD_2ways2lane
 #
-usemtl ROAD_CityBlockA Mesh_Mat_2ways2lane
+usemtl RD_2ways2lane
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -9044,9 +9044,9 @@ f 6831/55/8 6859/75/8 6858/76/8
 f 6858/76/8 6832/58/8 6831/55/8
 
 #
-# ROAD_CityBlockA Mesh_Mat_2ways2laneN
+# RD_2ways2laneN
 #
-usemtl ROAD_CityBlockA Mesh_Mat_2ways2laneN
+usemtl RD_2ways2laneN
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -11314,9 +11314,9 @@ f 9178/77/9 9177/78/9 9179/79/9
 f 9179/79/9 9180/80/9 9178/77/9
 
 #
-# ROAD_CityBlockA Mesh_Mat_2ways4Lane
+# RD_2ways4Lane
 #
-usemtl ROAD_CityBlockA Mesh_Mat_2ways4Lane
+usemtl RD_1way4lane
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -13601,9 +13601,9 @@ f 11052/92/17 11051/91/17 11405/124/17
 f 11405/124/17 11322/123/17 11052/92/17
 
 #
-# ROAD_CityBlockA Mesh_Mat_Concrete
+# RD_Concrete
 #
-usemtl ROAD_CityBlockA Mesh_Mat_Concrete
+usemtl RD_Inter
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -15992,9 +15992,9 @@ f 13583/130/18 13296/131/18 13580/125/18
 f 13584/136/18 13582/129/18 13581/128/18
 
 #
-# ROAD_CityBlockA Mesh_Mat_CrossRoad
+# RD_CrossRoad
 #
-usemtl ROAD_CityBlockA Mesh_Mat_CrossRoad
+usemtl RD_1way4laneN
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -18223,9 +18223,9 @@ f 15623/149/19 15624/150/19 15466/151/19
 f 15466/151/19 15465/152/19 15623/149/19
 
 #
-# ROAD_CityBlockA Mesh_Mat_Crossing
+# RD_Crossing
 #
-usemtl ROAD_CityBlockA Mesh_Mat_Crossing
+usemtl RD_Crossing
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -20536,9 +20536,9 @@ f 17991/153/20 17990/154/20 17993/155/20
 f 17993/155/20 17994/156/20 17991/153/20
 
 #
-# ROAD_CityBlockA Mesh_Mat_GroundGrass
+# RD_GroundGrass
 #
-usemtl ROAD_CityBlockA Mesh_Mat_GroundGrass
+usemtl GD_Grass02
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -22845,9 +22845,9 @@ f 22035/203/38 22039/204/39 22030/205/40
 f 22030/205/40 22029/206/41 22035/203/38
 
 #
-# ROAD_CityBlockA Mesh_Mat_GroundTile1
+# RD_GroundTile1
 #
-usemtl ROAD_CityBlockA Mesh_Mat_GroundTile1
+usemtl GD_paver01
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -25190,9 +25190,9 @@ f 24023/212/42 24075/264/60 24076/265/60
 f 24018/207/42 24023/212/42 24076/265/60
 
 #
-# ROAD_CityBlockA Mesh_Mat_GroundTile2
+# RD_GroundTile2
 #
-usemtl ROAD_CityBlockA Mesh_Mat_GroundTile2
+usemtl GD_paver02
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -27593,9 +27593,9 @@ f 26362/309/89 26394/341/104 26393/340/103
 f 26357/304/86 26362/309/89 26393/340/105
 
 #
-# ROAD_CityBlockA Mesh_Mat_GroundTile4
+# RD_GroundTile4
 #
-usemtl ROAD_CityBlockA Mesh_Mat_GroundTile4
+usemtl GD_paver03
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -30016,9 +30016,9 @@ f 28394/398/133 28413/417/141 28425/429/133
 f 28388/392/130 28394/398/133 28425/429/133
 
 #
-# ROAD_CityBlockA Mesh_Mat_GroundTile6
+# RD_GroundTile6
 #
-usemtl ROAD_CityBlockA Mesh_Mat_GroundTile6
+usemtl GD_paver06
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -32450,9 +32450,9 @@ f 30734/487/189 30763/516/148 30764/517/198
 f 30727/480/182 30734/487/189 30764/517/198
 
 #
-# ROAD_CityBlockA Mesh_Mat_GroundTile7
+# RD_GroundTile7
 #
-usemtl ROAD_CityBlockA Mesh_Mat_GroundTile7
+usemtl GD_paver07
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
@@ -34905,9 +34905,9 @@ f 33009/583/226 33042/616/243 33044/618/245
 f 33007/581/225 33009/583/226 33044/618/245
 
 #
-# ROAD_CityBlockA Mesh_Mat_SideWalk
+# RD_SideWalk
 #
-usemtl ROAD_CityBlockA Mesh_Mat_SideWalk
+usemtl RD_SideWalk
 
 v 22.965879 -0.000001 -22.965897
 v -22.965881 -0.000001 -22.965895
