@@ -1106,6 +1106,8 @@ bool InitScene( )
 
 	d3d11Device->CreateDepthStencilState( &dssDesc, &DSLessEqual );
 
+	SwapChain->SetFullscreenState( true, NULL );
+
 	return true;
 }
 

@@ -18,13 +18,11 @@ DXShader::DXShader( LPCSTR vsFunctionName,
 
 DXShader::~DXShader( )
 {
-	/*
 	this->VS->Release( );
 	this->PS->Release( );
 	this->VS_Buffer->Release( );
 	this->PS_Buffer->Release( );
 	this->VertLayout->Release( );
-	*/
 }
 
 HRESULT DXShader::Compile( LPCSTR vsFunctionName,
