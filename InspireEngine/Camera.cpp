@@ -42,7 +42,7 @@ void Camera::Update( float moveLeftRight, float moveBackForward )
 	camForward = XMVector3TransformCoord( DefaultForward, RotateYTempMatrix );
 
 	CamPosition += moveLeftRight * camRight;
-	CamPosition += moveBackForward * camForward;
+	CamPosition += moveBackForward * ( camForward + XMLoadFloat3( &XMFLOAT3( 0.0f,sinf(( XMVectorGetX(CamPosition) + XMVectorGetZ( CamPosition )) * 7.0f ) / 25.0f, 0.0f )) );
 
 	moveLeftRight = 0.0f;
 	moveBackForward = 0.0f;
