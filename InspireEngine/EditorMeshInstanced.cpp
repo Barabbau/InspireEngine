@@ -16,9 +16,10 @@ EditorMeshInstanced::EditorMeshInstanced(
 	Camera &camera, 
 	DXShaderManager &shaderManager,
 	Light &light,
-	InspireUtils &inspireUtils
+	InspireUtils &inspireUtils,
+	EditorMeshPtr bBox
 ) : _d3d11DevCon( d3d11DevCon ), _d3d11Device( d3d11Device ), _materialsList( materialsList ), _lstEditorObject3Ds( lstEditorObject3Ds ), _camera( camera ), _shaderManager( shaderManager ), _light( light ),
-EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, rot, pos, scale, useBboxLod, materialsList, lstEditorObject3Ds, shaderManager, light, inspireUtils )
+EditorMesh( d3d11DevCon, d3d11Device, fileName, pathModels, rot, pos, scale, useBboxLod, materialsList, lstEditorObject3Ds, shaderManager, light, inspireUtils, 1, bBox )
 {
 	this->_spawnPoints = new std::vector<SpawnPointPtr>( );
 	this->AddSpawnPoint( pos, rot, scale );
@@ -34,9 +35,9 @@ EditorMeshInstanced::~EditorMeshInstanced( )
 void EditorMeshInstanced::AddSpawnPoint( XMFLOAT3 position, XMFLOAT3 rotation, XMFLOAT3 scale )
 {
 	SpawnPoint* spawnPoint = new SpawnPoint( );
-	spawnPoint->position = position;//XMFLOAT3( 0.0f, 0.0f, 0.0f ); //position;// XMFLOAT3( i * 20.0f, 0.02f, i );
-	spawnPoint->rotation = rotation;// XMFLOAT3( 0.0f, 0.0f, 0.0f );
-	spawnPoint->scale = scale;//XMFLOAT3( 1.0f, 1.0f, 1.0f );// scale;// XMFLOAT3( 1.0f, 1.0f, 1.0f );
+	spawnPoint->position = position;
+	spawnPoint->rotation = rotation;
+	spawnPoint->scale = scale;
 
 	SpawnPointPtr point( spawnPoint );
 	this->_spawnPoints->push_back( point );
@@ -216,7 +217,7 @@ void EditorMeshInstanced::Render( XMMATRIX viewProjection, INT32 index, INT32 am
 
 		case 2:
 		{
-			this->_bBox->_meshDx->DrawInstanced(
+			this->BBox->_meshDx->DrawInstanced(
 				this->_d3d11DevCon,
 				viewProjection,
 				this->_materialsList,

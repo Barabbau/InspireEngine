@@ -52,9 +52,7 @@ class MeshDX
 		XMMATRIX viewProjection,
 		std::vector<SurfaceMaterial> &materialsList,
 		DXShaderManager &shaderManager,
-		XMFLOAT3 rot,
-		XMFLOAT3 pos,
-		XMFLOAT3 scale,
+		XMMATRIX World,
 		Light &light );
 
 	void MeshDX::DrawInstanced(

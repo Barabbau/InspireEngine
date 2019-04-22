@@ -35,7 +35,8 @@ class SceneGraph
 		Camera &camera,
 		DXShaderManager &shaderManager,
 		Light &light,
-		InspireUtils &inspireUtils );
+		InspireUtils &inspireUtils,
+		EditorMeshPtr bBox );
 	~SceneGraph( );
 
 	bool SceneRead(
@@ -47,15 +48,28 @@ class SceneGraph
 		Camera &camera,
 		DXShaderManager &shaderManager,
 		Light &light,
-		InspireUtils &inspireUtils );
+		InspireUtils &inspireUtils,
+		EditorMeshPtr bBox,
+	bool isInstanced = false );
 
-	void Render( XMMATRIX ViewPerspective );
+	void Render(
+	ID3D11DeviceContext &d3d11DevCon,
+	XMMATRIX viewProjection,
+	std::vector<SurfaceMaterial> &materialsList,
+	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+	DXShaderManager &shaderManager,
+	XMVECTOR cameraPosition,
+	XMVECTOR cameraForward,
+	Light &light );
+	void RenderInstanced( XMMATRIX ViewPerspective );
 
 	XMFLOAT3 RootPosition;
 	XMFLOAT3 RootRotation;
 	XMFLOAT3 RootScale;
 
 	std::unordered_map<std::string, EditorMeshInstancedPtr> *InstancedObjects;
+	std::vector<EditorMeshPtr> *SceneObjects;
+
 
 	private:
 

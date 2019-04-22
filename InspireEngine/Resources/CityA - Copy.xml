@@ -6008,7 +6008,7 @@ ROAD_CityBlockA;X=1283.24 Y=157.04 Z=0.00125885;P=0.0 Y=0.0 R=0.0;X=0.1091 Y=0.1
 ;Building_12stores_CommercialCentre;X=-10335.2 Y=-12217.1 Z=16.2402;P=0.0 Y=90.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
 ;Building_3stores_School;X=12412.5 Y=11539.3 Z=16.2402;P=0.0 Y=90.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
 ;Building_4stores_BrickResidential;X=13273.4 Y=-1973.42 Z=16.2402;P=0.0 Y=0.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
-;Building_4stores_Residential;X=11487.4 Y=-4590.29 Z=16.2402;P=0.0 Y=0.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
+;Building_4stores_Residential;X=5487.4 Y=-2190.29 Z=16.2402;P=0.0 Y=0.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
 ;Building_15stores_HouseOffice;X=5199.62 Y=-12728.1 Z=16.2402;P=0.0 Y=0.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
 ;Building_25stores_Office;X=5165.47 Y=-7183.73 Z=15.0923;P=0.0 Y=0.0 R=0.0;X=1.0 Y=1.0 Z=1.0;
 ;Building_8stores_Office;X=4256.74 Y=10666.1 Z=16.2402;P=0.0 Y=90.0 R=0.0;X=1.0 Y=1.0 Z=1.0;

@@ -384,9 +384,7 @@ void MeshDX::Draw(
 	XMMATRIX viewProjection,
 	std::vector<SurfaceMaterial> &materialsList,
 	DXShaderManager &shaderManager,
-	XMFLOAT3 rot,
-	XMFLOAT3 pos,
-	XMFLOAT3 scale,
+	XMMATRIX World,
 	Light &light )
 {
 	UINT stride = sizeof( DXVertex );
@@ -394,16 +392,12 @@ void MeshDX::Draw(
 
 	XMMATRIX meshWorld = XMMatrixIdentity( );
 
-	//Define world space matrix
-	XMMATRIX Rotation = XMMatrixRotationRollPitchYaw( rot.x, rot.y, rot.z );  //XMMatrixRotationY( rot.y );
-	XMMATRIX Scale = XMMatrixScaling( scale.x, scale.y, scale.z );
-	XMMATRIX Translation = XMMatrixTranslation( pos.x, pos.y, -pos.z );
-
-	meshWorld = Scale * Rotation * Translation;
-	
 	//Set the WVP matrix and send it to the constant buffer in effect file
-	XMMATRIX WVP = meshWorld * viewProjection;
+	XMMATRIX WVP = World * viewProjection;
+	
+	shaderManager.cbPerObj.World = XMMatrixTranspose( World );
 
+	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
 
 	for ( size_t i = 0; i < this->_originalObject3D->MaterialIds.size( ); ++i )
 	{
@@ -411,10 +405,10 @@ void MeshDX::Draw(
 
 		SurfaceMaterial* surfaceMaterial = &materialsList[ materialId ];
 
-		if ( surfaceMaterial->transparent)
+		if ( surfaceMaterial->transparent )
 		{
 			//Set our blend state
-			d3d11DevCon.OMSetBlendState( shaderManager.Transparency, NULL, 0xffffffff);
+			d3d11DevCon.OMSetBlendState( shaderManager.Transparency, NULL, 0xffffffff );
 		}
 		else
 		{
@@ -435,14 +429,14 @@ void MeshDX::Draw(
 
 		// set per object constant buffer
 		shaderManager.cbPerObj.WVP = XMMatrixTranspose( WVP );
-		shaderManager.cbPerObj.World = XMMatrixTranspose( meshWorld );
+
 		shaderManager.cbPerObj.difColor = surfaceMaterial->difColor;
 		shaderManager.cbPerObj.hasTexture = surfaceMaterial->hasTexture;
 
 		d3d11DevCon.UpdateSubresource( shaderManager.cbPerObjectBuffer, 0, NULL, &shaderManager.cbPerObj, 0, 0 );
 		d3d11DevCon.VSSetConstantBuffers( 1, 1, &shaderManager.cbPerObjectBuffer.p );
 		d3d11DevCon.PSSetConstantBuffers( 1, 1, &shaderManager.cbPerObjectBuffer.p );
-		
+
 		if ( surfaceMaterial->hasTexture )
 		{
 			d3d11DevCon.PSSetShaderResources( 0, 1, &surfaceMaterial->albedoTexture );
@@ -450,12 +444,7 @@ void MeshDX::Draw(
 			d3d11DevCon.PSSetShaderResources( 2, 1, &shaderManager.skyboxTexture );
 		}
 
-		d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
-
-
-		INT32 perMaterialBuffersCount = this->_indexBufferArray->at( materialId ).size( );
-
-		for ( INT32 a = 0; a < perMaterialBuffersCount; a++ )
+		for ( INT32 a = 0; a < this->_indexBufferArray->at( materialId ).size( ); a++ )
 		{
 			//Set the grounds index buffer
 			d3d11DevCon.IASetIndexBuffer( this->_indexBufferArray->at( materialId ).at( a ), DXGI_FORMAT_R32_UINT, 0 );

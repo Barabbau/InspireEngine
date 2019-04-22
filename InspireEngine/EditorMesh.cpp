@@ -18,6 +18,8 @@ EditorMesh::EditorMesh(
 	DXShaderManager &shaderManager,
 	Light &light,
 	InspireUtils &inspireUtils,
+	INT32 materialType,
+	EditorMeshPtr bBox,
 	XMCOLOR color
 )
 {
@@ -27,11 +29,15 @@ EditorMesh::EditorMesh(
 	this->LodId = -1;
 	this->InstanceId = -1;
 	this->ProjectedDistanceFromCamera = 0;
+	this->BBox = bBox;
 
-	// set
-	this->position = pos;
-	this->rotation = rot;
-	this->scale = scale;
+
+	//Define world space matrix
+	XMMATRIX Rotation = XMMatrixRotationRollPitchYaw( rot.x, rot.y, rot.z );
+	XMMATRIX Scale = XMMatrixScaling( scale.x, scale.y, scale.z );
+	XMMATRIX Translation = XMMatrixTranslation( pos.x, pos.y, -pos.z );
+
+	this->Transform = Scale * Rotation * Translation;
 
 	this->_mesh = Mesh( );
 
@@ -51,18 +57,20 @@ EditorMesh::EditorMesh(
 		std::cerr << ( "Found LOD for Model: " + fileName ).c_str( ) << std::endl;
 
 		EditorMesh* aObject = new EditorMesh( d3d11DevCon,
-										 d3d11Device,
-										 sFileName,
-										 pathModels,
-										 rot,
-										 pos,
-										 scale,
-										 false,
-										 materialsList,
-										 lstEditorObject3Ds,
-										 shaderManager,
-										 light,
-										 inspireUtils,
+											 d3d11Device,
+											 sFileName,
+											 pathModels,
+											 rot,
+											 pos,
+											 scale,
+											 false,
+											 materialsList,
+											 lstEditorObject3Ds,
+											 shaderManager,
+											 light,
+											 inspireUtils,
+											  materialType,
+											  bBox,
 										 color );
 		aObject->IsLod = true;
 
@@ -103,17 +111,9 @@ EditorMesh::EditorMesh(
 		{
 			if ( lstEditorObject3Ds[ i ]->FilePath._Equal( objName ) )
 			{
-				InstanceId = instanceId;
-
-				if ( this->_mesh.normals.size( ) != this->_mesh.vertices.size( ) )
-				{
-					this->_mesh.ComputeNormals( );
-				}
-
-				this->_meshDx = new MeshDX( _mesh );
-				this->_meshDx->CreateVertexBufferArray( d3d11Device );
-
-				this->useBboxLod = useBboxLod;
+				this->InstanceId = instanceId;
+				this->minPoint = lstEditorObject3Ds.at( this->InstanceId )->minPoint;
+				this->maxPoint = lstEditorObject3Ds.at( this->InstanceId )->maxPoint;
 
 				return;
 			}
@@ -122,9 +122,8 @@ EditorMesh::EditorMesh(
 		instanceId++;
 	}
 
-
-	XMFLOAT3 minPoint;
-	XMFLOAT3 maxPoint;
+	XMFLOAT3 min;
+	XMFLOAT3 max;
 
 	if ( inspireUtils.ObjRead(
 		d3d11Device, 
@@ -133,31 +132,29 @@ EditorMesh::EditorMesh(
 		pathModels, 
 		materialsList, 
 		&this->_mesh,
-		&minPoint,
-		&maxPoint 
+		min,
+		max,
+		materialType
 		) )
 	{
-		// Create Bounding Box
-		
-		if ( useBboxLod )
+
+
+		if ( this->InstanceId == -1 )
 		{
-			this->_bBox = new EditorMesh( 
-				d3d11DevCon,
-				d3d11Device,
-				"BBox.obj",
-				pathModels,
-				rot,
-				pos,
-				scale,
-				false,
-				materialsList,
-				lstEditorObject3Ds,	
-				shaderManager,
-				light,
-				inspireUtils,				
-				color );
+			EditorMeshPtr aSmartObject( this );
+			lstEditorObject3Ds.push_back( aSmartObject );
+
+			this->minPoint = XMLoadFloat3( &min );
+			this->maxPoint = XMLoadFloat3( &max );
 		}
-		
+		else
+		{
+			this->minPoint = lstEditorObject3Ds.at( this->InstanceId )->minPoint;
+			this->maxPoint = lstEditorObject3Ds.at( this->InstanceId )->maxPoint;
+		}
+
+
+
 		/*
 		if ( this->_mesh.normals.size( ) != this->_mesh.vertices.size( ) )
 		{
@@ -195,6 +192,8 @@ EditorMesh::EditorMesh(
 	DXShaderManager &shaderManager,
 	Light &light,
 	InspireUtils &inspireUtils,
+	INT32 materialType,
+	EditorMeshPtr bBox,
 	XMCOLOR color
 )
 {
@@ -205,10 +204,12 @@ EditorMesh::EditorMesh(
 	this->InstanceId = -1;
 	this->ProjectedDistanceFromCamera = 0;
 
-	// set
-	this->position = pos;
-	this->rotation = rot;
-	this->scale = scale;
+	//Define world space matrix
+	XMMATRIX Rotation = XMMatrixRotationRollPitchYaw( rot.x, rot.y, rot.z );
+	XMMATRIX Scale = XMMatrixScaling( scale.x, scale.y / 100, scale.z );
+	XMMATRIX Translation = XMMatrixTranslation( pos.x, pos.y, -pos.z );
+
+	this->Transform = Scale * Rotation * Translation;
 
 	this->_mesh = Mesh( );
 	
@@ -219,7 +220,7 @@ EditorMesh::EditorMesh(
 		materialsList.size( ), 
 		materialsList, 
 		shaderManager,
-		0 );
+		materialType );
 
 	for ( size_t i = 0; i < indices.size( ); i += 3 )
 	{
@@ -231,6 +232,10 @@ EditorMesh::EditorMesh(
 		this->_mesh.Faces.push_back( face );
 	}
 
+	XMFLOAT3 minVertex = XMFLOAT3( 100000, 100000, 100000 );
+	XMFLOAT3 maxVertex = XMFLOAT3( -100000, -100000, -100000 );
+
+
 	for ( size_t i = 0; i < v.size( ); i++ )
 	{
 		XMFLOAT3 vertex = XMFLOAT3( v.at( i ).pos );
@@ -241,7 +246,42 @@ EditorMesh::EditorMesh(
 
 		XMFLOAT3 normal = XMFLOAT3( v.at( i ).normal );
 		this->_mesh.normals.push_back( normal );
+
+		// Calculate mix and max for the bounding box
+		if ( vertex.x < minVertex.x )
+		{
+			minVertex.x = vertex.x;
+		}
+
+		if ( vertex.y < minVertex.y )
+		{
+			minVertex.y = vertex.y;
+		}
+
+		if ( vertex.z < minVertex.z )
+		{
+			minVertex.z = vertex.z;
+		}
+
+
+		if ( vertex.x > maxVertex.x )
+		{
+			maxVertex.x = vertex.x;
+		}
+
+		if ( vertex.y > maxVertex.y )
+		{
+			maxVertex.y = vertex.y;
+		}
+
+		if ( vertex.z > maxVertex.z )
+		{
+			maxVertex.z = vertex.z;
+		}
 	}
+
+	this->minPoint = XMLoadFloat3( &minVertex );
+	this->maxPoint = XMLoadFloat3( &maxVertex );
 
 	// Get non-case sensitive name
 	std::string objName = objectName;
@@ -284,29 +324,8 @@ EditorMesh::EditorMesh(
 
 
 	// Create Bounding Box
-	/*
-	XMFLOAT3 minPoint;
-	XMFLOAT3 maxPoint;
-
-	if ( useBboxLod )
-	{
-		this->_bBox = new EditorMesh( d3d11DevCon,
-									d3d11Device,
-									"BBox.obj",
-									pathModels,
-									rot,
-									pos,
-									scale,
-									false,
-									materialsList,
-									lstEditorObject3Ds,
-									camera,
-									shaderManager,
-									light,
-									inspireUtils,
-									color );
-	}
-	*/
+	this->BBox = bBox;
+	
 	/*
 	if ( this->_mesh.normals.size( ) != this->_mesh.vertices.size( ) )
 	{
@@ -341,9 +360,6 @@ void EditorMesh::Render(
 	std::vector<SurfaceMaterial> &materialsList,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 	DXShaderManager &shaderManager,
-	XMFLOAT3 rot,
-	XMFLOAT3 pos,
-	XMFLOAT3 scale,
 	Light &light,
 	INT32 lodIndex )
 {
@@ -353,16 +369,11 @@ void EditorMesh::Render(
 		{
 			if ( this->InstanceId != -1 )
 			{
-				lstEditorObject3Ds.at( this->InstanceId )->_bBox->position = pos;
-				lstEditorObject3Ds.at( this->InstanceId )->_bBox->rotation = rot;
-
 				lstEditorObject3Ds.at( this->InstanceId )->_meshDx->Draw( d3d11DevCon,
 																	viewProjection,
 																	materialsList,
 																	shaderManager,
-																	rot,
-																	pos,
-																	scale,
+																	this->Transform,
 																	light );
 			}
 			else
@@ -371,9 +382,7 @@ void EditorMesh::Render(
 									viewProjection,
 									materialsList,
 									shaderManager,
-									rot,
-									pos,
-									scale,
+									this->Transform,
 									light );
 			}
 			break;
@@ -388,9 +397,7 @@ void EditorMesh::Render(
 					viewProjection,
 					materialsList,
 					shaderManager,
-					rot,
-					pos,
-					scale,
+					this->Transform,
 					light );
 			}
 			break;
@@ -398,33 +405,13 @@ void EditorMesh::Render(
 
 		case 2:
 		{
-			if ( InstanceId != -1 )
-			{
-				lstEditorObject3Ds.at( this->InstanceId )->_bBox->position = pos;
-				lstEditorObject3Ds.at( this->InstanceId )->_bBox->rotation = rot;
-
-				lstEditorObject3Ds.at( this->InstanceId )->_bBox->_meshDx->Draw(
-					d3d11DevCon,
-					viewProjection,
-					materialsList,
-					shaderManager,
-					rot,
-					pos,
-					scale,
-					light );
-			}
-			else
-			{
-				this->_bBox->_meshDx->Draw(
-									d3d11DevCon,
-									viewProjection,
-									materialsList,
-									shaderManager,
-									rot,
-									pos,
-									scale,
-									light );
-			}
+			this->BBox->_meshDx->Draw(
+								d3d11DevCon,
+								viewProjection,
+								materialsList,
+								shaderManager,
+								this->Transform,
+								light );
 			break;
 		}
 
@@ -455,153 +442,221 @@ void EditorMesh::RenderObject(
 	std::vector<SurfaceMaterial> &materialsList,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 	DXShaderManager &shaderManager,
-	XMFLOAT3 rot,
-	XMFLOAT3 pos,
-	XMFLOAT3 scale,
+	XMVECTOR cameraPosition,
+	XMVECTOR cameraForward,
 	Light &light )
 {
-	if ( !IsLod )
+	if ( !this->IsLod )
 	{
-		//if ( this->_bBox->useBboxLod )
-		{
-			INT32 lodIndex = 0;// LodId != -1 ? LodManager.LodSegment( ProjectedDistanceFromCamera ) : 0;
+		INT32 lodIndex = 0;
 
-			Render(
-				d3d11DevCon,
-				viewProjection,
-				materialsList,
-				lstEditorObject3Ds,
-				shaderManager,
-				rot,
-				pos,
-				scale, 
-				light, 
-				lodIndex );
+		XMVECTOR objPosition = XMVectorSet(
+				this->Transform._41,
+				this->Transform._42,
+				this->Transform._43,
+				0 );
+
+		XMVECTOR vectorDistance = XMVectorSubtract( cameraPosition, objPosition );
+
+		XMVECTOR length = XMVector3Length( vectorDistance );
+
+		float distance = 0.0f;
+		XMStoreFloat( &distance, length );
+
+		INT32 distanceFromCamera = ( INT32 ) distance;
+
+
+		XMVECTOR min = XMVector3Transform( this->minPoint, this->Transform );
+		XMVECTOR max = XMVector3Transform( this->maxPoint, this->Transform );
+		XMVECTOR vectorSize = XMVectorSubtract( min, max );
+
+		XMVECTOR size = XMVector3Length( vectorSize );
+
+		float maxSize = 0.0f;
+		XMStoreFloat( &maxSize, size );
+
+		bool isCameraInsideSphere = distanceFromCamera < ( maxSize / 2.0f );
+
+		float dot = 1;
+
+		// CAMERA CULLING
+		// Use all the point of the non AABB bbox for culling if closer then 200 units and the camera is inside the object sphere
+		if ( distanceFromCamera < 200 || isCameraInsideSphere )
+		{
+
+			XMFLOAT3 minMin;
+			XMStoreFloat3( &minMin, min );
+
+			XMFLOAT3 maxMax;
+			XMStoreFloat3( &maxMax, max );
+
+			int count = 0;
+			
+			// Test every point of the bounding box
+			float dotToTest = isCameraInsideSphere ? 0.0f : -0.5f;
+			while ( dot > dotToTest )
+			{
+				XMVECTOR vectorPos;
+				XMFLOAT3 p;
+				switch ( count )
+				{
+					case 0:
+						p.x = minMin.x;
+						p.y = minMin.y;
+						p.z = minMin.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 1:
+						p.x = maxMax.x;
+						p.y = maxMax.y;
+						p.z = maxMax.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 2:
+						p.x = minMin.x;
+						p.y = maxMax.y;
+						p.z = minMin.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 3:
+						p.x = minMin.x;
+						p.y = minMin.y;
+						p.z = maxMax.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 4:
+						p.x = minMin.x;
+						p.y = maxMax.y;
+						p.z = maxMax.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 5:
+						p.x = maxMax.x;
+						p.y = minMin.y;
+						p.z = maxMax.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 6:
+						p.x = maxMax.x;
+						p.y = minMin.y;
+						p.z = minMin.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					case 7:
+						p.x = maxMax.x;
+						p.y = maxMax.y;
+						p.z = minMin.z;
+						vectorPos = XMLoadFloat3( &p );
+						break;
+
+					default:
+						return;
+						break;
+				}
+
+				XMVECTOR vectorDistanceDetailed = XMVectorSubtract( cameraPosition, vectorPos );
+				vectorDistanceDetailed = XMVector3Normalize( vectorDistanceDetailed );
+				XMVECTOR objDot = XMVector3Dot( vectorDistanceDetailed, cameraForward );
+
+				XMStoreFloat( &dot, objDot );
+
+				/*
+				this->BBox->_meshDx->Draw(
+					d3d11DevCon,
+					viewProjection,
+					materialsList,
+					shaderManager,
+					XMMatrixScaling( 0.1f, 0.1f, 0.1f ) * XMMatrixTranslation( p.x, p.y, p.z ),
+					light );
+				*/
+				count++;
+			}
 		}
+		// Use only object center for culling if farther then 200 units and the camera is outside the object sphere
+		else
+		{
+			vectorDistance = XMVector3Normalize( vectorDistance );
+			XMVECTOR objDot = XMVector3Dot( vectorDistance, cameraForward );
+			XMStoreFloat( &dot, objDot );
+
+			if ( dot > 0.0f )
+			{
+				return;
+			}
+		}
+
+		/*
+		// FRUSTUM CULLING
+		bool clippedMin = false;
+		bool clippedMax = false;
+
+		XMVECTOR min = XMVector3Transform( this->minPoint, this->Transform );
+		XMVECTOR max = XMVector3Transform( this->maxPoint, this->Transform );
+
+		XMFLOAT3 minMin;
+		XMStoreFloat3( &minMin, min );
+
+		XMFLOAT3 maxMax;
+		XMStoreFloat3( &maxMax, max );
+
+		float nearClip =  0.01f;
+		float farClip = 1000.0f;
+		float halfWidth = 1000;
+		float halfHeight = 540;
+
+		if ( minMin.z > nearClip )clippedMin = true;
+		if ( minMin.z < farClip )clippedMin = true;
+
+		if ( maxMax.z > nearClip )clippedMax = true;
+		if ( maxMax.z < farClip )clippedMax = true;
+
+		float zcompWmin = minMin.z * -halfWidth;
+		float zcompWmax = maxMax.z * -halfWidth;
+
+		clippedMin = !( ( ( minMin.x * nearClip + zcompWmin ) > 0 ) && ( ( minMin.x * -nearClip + zcompWmin ) > 0 ) &&
+			( ( minMin.y * -nearClip + minMin.z * -halfHeight ) > 0 ) && ( ( minMin.y * nearClip + minMin.z * -halfHeight ) > 0 ) );
+	
+		clippedMax = !( ( ( maxMax.x * nearClip + zcompWmax ) > 0 ) && ( ( maxMax.x * -nearClip + zcompWmax ) > 0 ) &&
+			( ( maxMax.y * -nearClip + maxMax.z * -halfHeight ) > 0 ) && ( ( maxMax.y * nearClip + maxMax.z * -halfHeight ) > 0 ) );
+
+		if ( clippedMin && clippedMax )
+		*/
+
+		// LOD switch
+		if ( distanceFromCamera >= this->lodSegments[ 0 ]
+				&& distanceFromCamera < this->lodSegments[ 1 ]
+				&& this->LodId != -1 )
+		{
+			lodIndex = 1;
+		}
+		else if ( distanceFromCamera >= this->lodSegments[ 1 ]
+				&& distanceFromCamera < this->lodSegments[ 2 ] )
+		{
+			lodIndex = 2;
+		}
+		else if ( distanceFromCamera >= this->lodSegments[ 2 ] )
+		{
+			return;
+		}
+
+		Render(
+			d3d11DevCon,
+			viewProjection,
+			materialsList,
+			lstEditorObject3Ds,
+			shaderManager,
+			light, 
+			lodIndex );
 	}
 }
-
-
 
 EditorMesh::~EditorMesh( )
 {
 }
-
-/*
- 
-
-        #region Methods
-
- 
-
-        /// <summary>
-
-        /// Assign all vertex a color
-
-        /// </summary>
-
-        /// <param name="color">The color to Assign</param>
-
-        public void Colorize(Color color)
-
-        {
-
-            _object3D.Colors = new List<Color>(_object3D.Points.Count);
-
-            for (Int32 i = 0; i < _object3D.Points.Count; i++)
-
-            {
-
-                _object3D.Colors.Add(color);
-
-            }
-
-        }
-
- 
-
- 
-
-        /// <summary>
-
-        /// Scale the Model
-
-        /// </summary>
-
-        /// <param name="scale">the rescale parameter</param>
-
-        public void Rescale(Double scale)
-
-        {
-
-            for (var i = 0; i < _object3D.Points.Count; i++)
-
-            {
-
-                _object3D.Points[i] /= scale;
-
-            }
-
-        }
-
- 
-
-        /// <summary>
-
-        /// Set Position and Rotation
-
-        /// </summary>
-
-        /// <param name="pos"></param>
-
-        /// <param name="rot"></param>
-
-        /// <param name="scale"></param>
-
-        /// <param name="useBBoxLod"></param>
-
-        public void SetPositionRotation(Point pos, Point rot, Point scale, Boolean useBBoxLod)
-
-        {
-
-            Pos[0] = pos[0];
-
-            Pos[1] = pos[1];
-
-            Pos[2] = pos[2];
-
- 
-
-            Scale[0] = scale[0];
-
-            Scale[1] = scale[1];
-
-            Scale[2] = scale[2];
-
- 
-
-            Rot[0] = rot[0];
-
-            Rot[1] = rot[1];
-
-            Rot[2] = rot[2];
-
- 
-
-            Bbox.UseBBoxAsLod = useBBoxLod;
-
-            Bbox.Pos = Pos;
-
-            Bbox.Rot = Rot;
-
-        }
-
- 
-
-        #endregion
-
-    }
-
-}
-
-*/

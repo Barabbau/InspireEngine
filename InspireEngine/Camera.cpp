@@ -39,10 +39,10 @@ void Camera::Update( float moveLeftRight, float moveBackForward )
 	//walk
 	camRight = XMVector3TransformCoord( DefaultRight, RotateYTempMatrix );
 	camUp = XMVector3TransformCoord( camUp, RotateYTempMatrix );
-	camForward = XMVector3TransformCoord( DefaultForward, RotateYTempMatrix );
+	camForward = XMVector3TransformCoord( DefaultForward, camRotationMatrix );//RotateYTempMatrix );// use RotateYTempMatrix for fps camera
 
 	CamPosition += moveLeftRight * camRight;
-	CamPosition += moveBackForward * ( camForward + XMLoadFloat3( &XMFLOAT3( 0.0f,sinf(( XMVectorGetX(CamPosition) + XMVectorGetZ( CamPosition )) * 7.0f ) / 25.0f, 0.0f )) );
+	CamPosition += moveBackForward * ( camForward );// +XMLoadFloat3( &XMFLOAT3( 0.0f, sinf( ( XMVectorGetX( CamPosition ) + XMVectorGetZ( CamPosition ) ) * 7.0f ) / 25.0f, 0.0f ) ) );
 
 	moveLeftRight = 0.0f;
 	moveBackForward = 0.0f;

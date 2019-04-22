@@ -33,7 +33,8 @@ class EditorMeshInstanced : public EditorMesh
 		Camera &camera,
 		DXShaderManager &_shaderManager,
 		Light &light,
-		InspireUtils &inspireUtils
+		InspireUtils &inspireUtils,
+		EditorMeshPtr bBox
 	);
 	~EditorMeshInstanced( );
 

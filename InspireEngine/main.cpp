@@ -308,6 +308,10 @@ bool InitializeWindow( HINSTANCE hInstance,
 
 bool InitializeDirect3d11App( HINSTANCE hInstance )
 {
+	HRESULT hr;
+
+
+
 	//Describe our SwapChain Buffer
 	DXGI_MODE_DESC bufferDesc;
 
@@ -327,8 +331,10 @@ bool InitializeDirect3d11App( HINSTANCE hInstance )
 	ZeroMemory( &swapChainDesc, sizeof( DXGI_SWAP_CHAIN_DESC ) );
 
 	swapChainDesc.BufferDesc = bufferDesc;
-	swapChainDesc.SampleDesc.Count = 1;
-	swapChainDesc.SampleDesc.Quality = 0;
+	swapChainDesc.SampleDesc.Count = 2;
+	//UINT maxQuality;
+	//hr = d3d11Device->CheckMultisampleQualityLevels( swapChainDesc.BufferDesc.Format, swapChainDesc.SampleDesc.Count, &maxQuality );
+	swapChainDesc.SampleDesc.Quality = DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;// DXGI_STANDARD_MULTISAMPLE_QUALITY_PATTERN;//DXGI_CENTER_MULTISAMPLE_QUALITY_PATTERN
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	swapChainDesc.BufferCount = 1;
 	swapChainDesc.OutputWindow = hwnd;
@@ -340,7 +346,7 @@ bool InitializeDirect3d11App( HINSTANCE hInstance )
 	// Create DXGI factory to enumerate adapters///////////////////////////////////////////////////////////////////////////
 	IDXGIFactory1 *DXGIFactory;
 
-	HRESULT hr = CreateDXGIFactory1( __uuidof( IDXGIFactory1 ), ( void** )&DXGIFactory );
+	hr = CreateDXGIFactory1( __uuidof( IDXGIFactory1 ), ( void** )&DXGIFactory );
 
 	// Use the first adapter	
 	IDXGIAdapter1 *Adapter;
@@ -371,12 +377,13 @@ bool InitializeDirect3d11App( HINSTANCE hInstance )
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
 	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilDesc.SampleDesc.Count = 1;
-	depthStencilDesc.SampleDesc.Quality = 0;
+	depthStencilDesc.SampleDesc.Count = swapChainDesc.SampleDesc.Count;
+	depthStencilDesc.SampleDesc.Quality = swapChainDesc.SampleDesc.Quality;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
 	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 	depthStencilDesc.CPUAccessFlags = 0;
 	depthStencilDesc.MiscFlags = 0;
+
 
 	//Create the Depth/Stencil View
 	d3d11Device->CreateTexture2D( &depthStencilDesc, NULL, &depthStencilBuffer );
@@ -861,6 +868,7 @@ void InitD2DScreenTexture( )
 }
 
 
+EditorMeshPtr BBox;
 //_lstEditorObject3Ds = new std::vector<EditorMesh*>( );
 bool InitScene( )
 {
@@ -913,6 +921,26 @@ bool InitScene( )
 	indicesVector->push_back( 2 ); indicesVector->push_back( 1 );	indicesVector->push_back( 0 );
 	indicesVector->push_back( 3 ); indicesVector->push_back( 2 );	indicesVector->push_back( 0 );
 
+	EditorMesh *bBoxMesh = new EditorMesh(
+								*d3d11DevCon,
+								*d3d11Device,
+								"BBox.obj",
+								".\\Resources",
+								XMFLOAT3( 0, 0, 0 ),
+								XMFLOAT3( 0, 0, 0 ),
+								XMFLOAT3( 1, 1, 1 ),
+								true,
+								_materialsList,
+								*_lstEditorObject3Ds,
+								*_shaderManager,
+								*_light,
+								*_inspireUtils,
+				                0 );
+
+	EditorMeshPtr meshPointer( bBoxMesh );
+	BBox = meshPointer;
+
+
 	_groundPlane = new EditorMesh( *d3d11DevCon,
 								  *d3d11Device,
 								  "grondPlane",
@@ -923,12 +951,14 @@ bool InitScene( )
 								  XMFLOAT3( 0, 0, 0 ),
 								  XMFLOAT3( 0, -1, 0 ),
 								  XMFLOAT3( 1.0f, 1.0f, 1.0f ),
-								false,
+								true,
 								_materialsList,
 								*_lstEditorObject3Ds,
 								*_shaderManager,
 								*_light,
-								*_inspireUtils );
+								*_inspireUtils,								
+								 0, 
+							   BBox );
 
 	//Set the Input Layout
 	d3d11DevCon->IASetInputLayout( _shaderManager->_stdShader->VertLayout );
@@ -982,9 +1012,10 @@ bool InitScene( )
 	XMFLOAT3 pos = XMFLOAT3( 0.0f, 0.5f, 0.0f );
 	XMFLOAT3 rot = XMFLOAT3( 0.0f, 0.0f, 0.0f );
 
-
+	/*
 	float scaleF = 0.1f;// 3.048f;//float scaler = 304.8f;
 	XMFLOAT3 scale = XMFLOAT3( scaleF, scaleF, scaleF );
+	
 	editorMeshInstanced = new EditorMeshInstanced( *d3d11DevCon,
 											*d3d11Device,
 											"UDC_Fountain.obj",// "BBox.obj",//"Building_15stores_HouseOffice.obj",
@@ -999,7 +1030,7 @@ bool InitScene( )
 											*_shaderManager,
 											*_light,
 											*_inspireUtils );
-
+											*/
 	_sceneGraph = new SceneGraph( *d3d11DevCon,
 											*d3d11Device,
 											".\\Resources\\CityA.xml",
@@ -1008,7 +1039,11 @@ bool InitScene( )
 											*_camera,
 											*_shaderManager,
 											*_light,
-											*_inspireUtils );
+											*_inspireUtils,
+											BBox );
+
+	EditorMeshPtr ground( _groundPlane );
+	_sceneGraph->SceneObjects->push_back( ground );
 	//_camera->CamPosition = XMLoadFloat3( &_sceneGraph->InstancedObjects->end( )._Ptr->_Myval.second->_spawnPoints->at( 0 )->position );// InstancedObjects->end( )._Ptr->_Myval.second->_spawnPoints.at( 0 ));
 
 	D3D11_BLEND_DESC blendDesc;
@@ -1106,7 +1141,7 @@ bool InitScene( )
 
 	d3d11Device->CreateDepthStencilState( &dssDesc, &DSLessEqual );
 
-	SwapChain->SetFullscreenState( true, NULL );
+	//SwapChain->SetFullscreenState( true, NULL );
 
 	return true;
 }
@@ -1270,20 +1305,39 @@ void DrawScene( )
 	d3d11DevCon->RSSetState( CWcullMode );
 	//d3d11DevCon->RSSetState( RSCullNone );
 	
-	_groundPlane->RenderObject(
-							*d3d11DevCon,
-							VP,
-							_materialsList,
-							*_lstEditorObject3Ds,
-							*_shaderManager,
-							_groundPlane->rotation,
-							_groundPlane->position,
-							_groundPlane->scale,
-							*_light );
-							
-	editorMeshInstanced->RenderInstanced( VP );
+	XMVECTOR cameraPosition = XMVectorSet(
+	XMVectorGetX( _camera->CamPosition ),
+	XMVectorGetY( _camera->CamPosition ),
+	XMVectorGetZ( _camera->CamPosition ),
+	0 );
 
-	_sceneGraph->Render( VP );
+	XMVECTOR cameraForward = XMVectorSet(
+		XMVectorGetX( _camera->camForward ),
+		XMVectorGetY( _camera->camForward ),
+		XMVectorGetZ( _camera->camForward ),
+		0 );
+
+	/*
+	_groundPlane->RenderObject(
+		*d3d11DevCon,
+		VP,
+		_materialsList,
+		*_lstEditorObject3Ds,
+		*_shaderManager,
+		cameraPosition,
+		cameraForward,
+		*_light );
+		*/
+	//editorMeshInstanced->RenderInstanced( VP );
+
+	_sceneGraph->Render( *d3d11DevCon,
+					VP,
+					_materialsList,
+					*_lstEditorObject3Ds,
+					*_shaderManager,
+					cameraPosition,
+					cameraForward,
+					*_light );
 	//////////////////////////////////////////////////////////////////
 	
 	

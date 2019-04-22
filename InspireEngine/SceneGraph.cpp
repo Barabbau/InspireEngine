@@ -9,9 +9,11 @@ SceneGraph::SceneGraph(
 	Camera &camera,
 	DXShaderManager &shaderManager,
 	Light &light,
-	InspireUtils &inspireUtils )
+	InspireUtils &inspireUtils,
+	EditorMeshPtr bBox )
 {
 	this->InstancedObjects = new std::unordered_map<std::string, EditorMeshInstancedPtr>( );
+	this->SceneObjects = new std::vector<EditorMeshPtr>( );
 
 	SceneRead( d3d11DevCon,
 							d3d11Device,
@@ -21,7 +23,8 @@ SceneGraph::SceneGraph(
 							camera,
 							shaderManager,
 							light,
-							inspireUtils );
+							inspireUtils,
+							bBox );
 }
 
 SceneGraph::~SceneGraph( )
@@ -43,8 +46,11 @@ bool SceneGraph::SceneRead(
 	Camera &camera,
 	DXShaderManager &shaderManager,
 	Light &light,
-	InspireUtils &inspireUtils )
+	InspireUtils &inspireUtils,
+	EditorMeshPtr bBox,
+	bool isInstanced )
 {
+
 	// Get non-case sensitive name
 	std::string objName = fileName;
 
@@ -87,7 +93,7 @@ bool SceneGraph::SceneRead(
 			std::string currentObjName = parts.at( partIndex ) + ".obj";
 			partIndex++;
 
-			float positionScaler = 304.8f;
+			float positionScaler = 302.5f;// 304.8f;
 			float degreesToRadiansConverter = 0.01745329f;
 
 			// position
@@ -115,13 +121,49 @@ bool SceneGraph::SceneRead(
 			scale.z = std::atof( scaleParts.at( 2 ).substr( 2, scaleParts.at( 2 ).size( ) - 2 ).c_str( ) );
 			partIndex++;
 			//camera.CamPosition = XMLoadFloat3( &pos );
-			auto got = this->InstancedObjects->find( currentObjName );
-			if ( got == this->InstancedObjects->end( ) )
+
+			if ( isInstanced )
 			{
-				EditorMeshInstanced *editorMeshInstanced = new EditorMeshInstanced(
+				auto got = this->InstancedObjects->find( currentObjName );
+				if ( got == this->InstancedObjects->end( ) )
+				{
+					EditorMeshInstanced *editorMeshInstanced = new EditorMeshInstanced(
+						d3d11DevCon,
+						d3d11Device,
+						currentObjName,
+						".\\Resources",
+						rot,
+						pos,
+						scale,
+						true,
+						materialsList,
+						lstEditorObject3Ds,
+						camera,
+						shaderManager,
+						light,
+						inspireUtils,
+						bBox );
+
+					if ( editorMeshInstanced->_mesh.vertices.size( ) > 0 )
+					{
+						EditorMeshInstancedPtr newComPointer( editorMeshInstanced );
+						// add new object pair
+						std::pair<std::string, EditorMeshInstancedPtr> newEditorMeshInstancedPair( currentObjName, newComPointer );
+						this->InstancedObjects->insert( newEditorMeshInstancedPair );
+					}
+				}
+				else
+				{
+					// add a transform to the existing instanciable object
+					this->InstancedObjects->at( currentObjName )->AddSpawnPoint( pos, rot, scale );
+				}
+			}
+			else
+			{
+				EditorMesh *editorMesh = new EditorMesh(
 					d3d11DevCon,
 					d3d11Device,
-					currentObjName,// "BBox.obj",//"Building_15stores_HouseOffice.obj",
+					currentObjName,
 					".\\Resources",
 					rot,
 					pos,
@@ -129,29 +171,28 @@ bool SceneGraph::SceneRead(
 					true,
 					materialsList,
 					lstEditorObject3Ds,
-					camera,
 					shaderManager,
 					light,
-					inspireUtils );
-
-				if ( editorMeshInstanced->_mesh.vertices.size( ) > 0 )
+					inspireUtils,
+					0, 
+					bBox );
+				
+				if ( ( editorMesh->InstanceId == -1 && editorMesh->_mesh.vertices.size( ) > 0 )
+					|| editorMesh->InstanceId != -1 )
 				{
-					EditorMeshInstancedPtr newComPointer( editorMeshInstanced );
-					// add new object pair
-					std::pair<std::string, EditorMeshInstancedPtr> newEditorMeshInstancedPair( currentObjName, newComPointer );
-					this->InstancedObjects->insert( newEditorMeshInstancedPair );
+					EditorMeshPtr editorMeshPtr( editorMesh );
+					SceneObjects->push_back( editorMeshPtr );
 				}
-			}
-			else
-			{
-				// add a transform to the existing instanciable object
-				this->InstancedObjects->at( currentObjName )->AddSpawnPoint( pos, rot, scale );
+
 			}
 		}
 
-		for ( auto it : *this->InstancedObjects )
+		if ( isInstanced )
 		{
-			it.second->CreateTransforms( );
+			for ( auto it : *this->InstancedObjects )
+			{
+				it.second->CreateTransforms( );
+			}
 		}
 		return true;
 	}
@@ -163,7 +204,31 @@ bool SceneGraph::SceneRead(
 	}
 }
 
-void SceneGraph::Render( XMMATRIX ViewPerspective )
+
+void SceneGraph::Render(
+	ID3D11DeviceContext &d3d11DevCon,
+	XMMATRIX viewProjection,
+	std::vector<SurfaceMaterial> &materialsList,
+	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+	DXShaderManager &shaderManager,
+	XMVECTOR cameraPosition,
+	XMVECTOR cameraForward,
+	Light &light )
+{
+	for ( auto it : *this->SceneObjects )
+	{
+		it->RenderObject( d3d11DevCon,
+				viewProjection,
+				materialsList,
+				lstEditorObject3Ds,
+				shaderManager,
+				cameraPosition,
+				cameraForward,
+				light );
+	}
+}
+
+void SceneGraph::RenderInstanced( XMMATRIX ViewPerspective )
 {
 	for ( auto it : *this->InstancedObjects )
 	{

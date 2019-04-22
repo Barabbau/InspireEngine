@@ -33,8 +33,9 @@ class InspireUtils
 		std::string pathModels,
 		std::vector<SurfaceMaterial> &materialsList,
 		Mesh* object3D,
-		XMFLOAT3* minVertex,
-		XMFLOAT3* maxVertex );
+		XMFLOAT3 &minVertex,
+		XMFLOAT3 &maxVertex,
+		INT32 materialType );
 
 	bool InspireUtils::ReadMaterialIdName(
 		ID3D11Device &d3d11Device,

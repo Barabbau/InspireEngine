@@ -28,6 +28,8 @@ class EditorMesh
 				DXShaderManager &shaderManager,
 				Light &light,
 				InspireUtils &inspireUtils,
+				INT32 materialType,
+				EditorMeshPtr BBox = nullptr,
 				XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
 
 	EditorMesh(	ID3D11DeviceContext &d3d11DevCon,
@@ -46,6 +48,8 @@ class EditorMesh
 				DXShaderManager &shaderManager,
 				Light &light,
 				InspireUtils &inspireUtils,
+				INT32 materialType,
+				EditorMeshPtr BBoxnullptr,
 				XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
 
 	void Render(
@@ -54,9 +58,6 @@ class EditorMesh
 				std::vector<SurfaceMaterial> &materialsList,
 				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 				DXShaderManager &shaderManager,
-				XMFLOAT3 rot,
-				XMFLOAT3 pos,
-				XMFLOAT3 scale,
 				Light &light,
 				INT32 lodIndex );
 
@@ -66,9 +67,8 @@ class EditorMesh
 				std::vector<SurfaceMaterial> &materialsList,
 				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 				DXShaderManager &shaderManager,
-				XMFLOAT3 rot,
-				XMFLOAT3 pos,
-				XMFLOAT3 scale,
+				XMVECTOR cameraPosition,
+		XMVECTOR cameraForward,
 				Light &light );
 
 	~EditorMesh( );
@@ -105,20 +105,7 @@ class EditorMesh
 	/// </summary>
 	INT32 ProjectedDistanceFromCamera;
 
-	/// <summary>
-	/// The local Rotation of the Object
-	/// </summary>
-	XMFLOAT3 rotation;
-	
-	/// <summary>
-	/// The World Position of the Object
-	/// </summary>
-	XMFLOAT3 position;
-
-	/// <summary>
-	/// The non uniform scale of the Object
-	/// </summary>
-	XMFLOAT3 scale;
+	XMMATRIX Transform;
 
 
 	INT32 lodSegments[ 3 ] = { 50, 1000, 10000 };
@@ -136,7 +123,9 @@ class EditorMesh
 	/// <summary>
 	/// The Bounding Box of the Editor Mesh
 	/// </summary>
-	EditorMesh* _bBox;
+	EditorMeshPtr BBox;
+	XMVECTOR minPoint;
+	XMVECTOR maxPoint;
 
 	private:
 

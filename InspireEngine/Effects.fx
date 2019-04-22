@@ -93,6 +93,7 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	float3 bumpNormal = input.WorldToTangentSpace[ 2 ];
 
 	float3 finalColor = float3( 0.0f, 0.0f, 0.0f );
+	float3 textureNormal = float3( 0.0f, 0.0f, 0.0f );
 
 	//Create the vector between light position and pixels position
 	float3 lightToPixelVec =  input.worldPos - light.pos;
@@ -112,24 +113,20 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 		diffuse = lerp( luminance, diffuse, float4( saturationValue, saturationValue, saturationValue, 1.0f ) );
 
 		// Sample the pixel in the bump map.
-		float3 textureNormal = ObjNormal.Sample( ObjSamplerState, input.TexCoord).xyz; //4 * ( 1.0f - diffuse.g ) ).xyz;
-		float g = textureNormal.b;
+		textureNormal = ObjNormal.Sample( ObjSamplerState, input.TexCoord ).xyz; //4 * ( 1.0f - diffuse.g ) ).xyz;
 
 		textureNormal = ( ( textureNormal * 2.0f ) - 1.0f );
-		textureNormal.b = -g;
-		textureNormal = normalize( textureNormal );
+		textureNormal.b = -( 1.0 - textureNormal.r * textureNormal.r - textureNormal.g * textureNormal.g );
 
 		// Move to tangentspace
 		bumpNormal = normalize( mul( textureNormal, input.WorldToTangentSpace ) );
 
 		// Reflect and fip z to sample cubemap
-		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal ); //input.WorldToTangentSpace[ 2 ] );// Normal are reblended with model normals
+		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal );// Normal are reblended with model normals
 		cubeSampCoords.z = -cubeSampCoords.z;
 
-		SkyColor = SkyMap.Sample( ObjSamplerState, cubeSampCoords)  * ( 1.0 - diffuse.r ) * 0.3; //, diffuse.r * 6 ).xyz * (1 - diffuse.r);
+		SkyColor = SkyMap.Sample( ObjSamplerState, cubeSampCoords)  * ( 1.0 - diffuse.r ) * 0.3;
 		//return float4( SkyColor, 1.0f );
-
-		//finalColor += SkyColor;
 	}
 
 	//Find the distance between the light pos and pixel pos
@@ -145,10 +142,18 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	//in which the light strikes the pixels surface
 	float howMuchLight = dot( lightToPixelVec, bumpNormal );
 
+	float3 sunLight = normalize( float3( 0.3f, -1.0f, 0.2f ) );
+
+	howMuchLight += dot( sunLight, bumpNormal );
+	howMuchLight /= 2.0f;
+
 	//If light is striking the front side of the pixel
 	if ( howMuchLight > 0.0f )
 	{
-		howMuchLight = howMuchLight;
+		// 
+		float occlusion = ( ObjNormal.Sample( ObjSamplerState, input.TexCoord + 0.001f ).b ) - abs( textureNormal.b );
+		howMuchLight = howMuchLight * saturate( 1.0 - abs( occlusion ) );
+
 		//Add light to the finalColor of the pixel
 		finalColor += ( SkyColor * howMuchLight + diffuse * light.diffuse * howMuchLight );// ( ( SkyColor * diffuse * light.diffuse ) * ( 2 * howMuchLight) );
 

@@ -227,11 +227,12 @@ bool InspireUtils::ObjRead(
 	std::string pathModels,
 	std::vector<SurfaceMaterial> &materialsList,
 	Mesh* object3D,
-	XMFLOAT3* minVertex,
-	XMFLOAT3* maxVertex )
+	XMFLOAT3 &minVertex,
+	XMFLOAT3 &maxVertex,
+	INT32 materialType )
 {
-	minVertex = &XMFLOAT3( 100000, 100000, 100000 );
-	maxVertex = &XMFLOAT3( -100000, -100000, -100000 );
+	minVertex = XMFLOAT3( 100000, 100000, 100000 );
+	maxVertex = XMFLOAT3( -100000, -100000, -100000 );
 
 	// Get non-case sensitive name
 	std::string objName = pathModels.append( "\\" );
@@ -280,7 +281,8 @@ bool InspireUtils::ObjRead(
 					lines[ i ],
 					materialId,
 					materialsList,
-					shaderManager
+					shaderManager,
+					materialType
 				);
 			}
 			else
@@ -317,37 +319,15 @@ bool InspireUtils::ObjRead(
 					vert = XMFLOAT3( x, y, z * -1.0f );
 					object3D->vertices.push_back( vert );
 
-					// Calculate mix and max for the bounding box
-					if ( object3D->vertices[ 0 ].x < minVertex->x )
-					{
-						minVertex->x = object3D->vertices[ 0 ].x;
-					}
+					//Get the smallest vertex 
+					minVertex.x = min( minVertex.x, vert.x );    // Find smallest x value in model
+					minVertex.y = min( minVertex.y, vert.y );    // Find smallest y value in model
+					minVertex.z = min( minVertex.z, vert.z );    // Find smallest z value in model
 
-					if ( object3D->vertices[ 0 ].y < minVertex->y )
-					{
-						minVertex->y = object3D->vertices[ 0 ].y;
-					}
-
-					if ( object3D->vertices[ 0 ].z < minVertex->z )
-					{
-						minVertex->z = object3D->vertices[ 0 ].z;
-					}
-
-
-					if ( object3D->vertices[ 0 ].x > maxVertex->x )
-					{
-						maxVertex->x = object3D->vertices[ 0 ].x;
-					}
-
-					if ( object3D->vertices[ 0 ].y > maxVertex->y )
-					{
-						maxVertex->y = object3D->vertices[ 0 ].y;
-					}
-
-					if ( object3D->vertices[ 0 ].z > maxVertex->z )
-					{
-						maxVertex->z = object3D->vertices[ 0 ].z;
-					}
+					//Get the largest vertex 
+					maxVertex.x = max( maxVertex.x, vert.x );    // Find largest x value in model
+					maxVertex.y = max( maxVertex.y, vert.y );    // Find largest y value in model
+					maxVertex.z = max( maxVertex.z, vert.z );    // Find largest z value in model
 
 					continue;
 				}
@@ -380,25 +360,11 @@ bool InspireUtils::ObjRead(
 					v >> z;
 
 					normal = XMFLOAT3( x, y, z * -1.0f );
-					/*
-					if ( ( normal.x ) < 0.0f )
-					{
-						normal.x = normal.x * -1.0f;
-					}
-					if ( ( normal.y ) < 0.0f )
-					{
-						normal.y = normal.y * -1.0f;
-					}
-					if ( ( normal.z ) < 0.0f )
-					{
-						normal.z = normal.z * -1.0f;
-					}
-					*/
+
 					object3D->normals.push_back( normal );
 
 					continue;
 				}
-
 
 				// Load Material names
 				if ( ReadMaterialIdName(
@@ -408,7 +374,8 @@ bool InspireUtils::ObjRead(
 					line,
 					materialId,
 					materialsList,
-					shaderManager ) )
+					shaderManager, 
+					materialType ) )
 				{
 					materialId = CurrentId;
 
@@ -418,7 +385,6 @@ bool InspireUtils::ObjRead(
 				// read faces
 				if ( line.substr( 0, 2 ) == "f " )
 				{
-
 					std::istringstream v( line.substr( 2 ) );
 					std::vector<std::string> partsLists = split( v.str( ), ' ' );
 					std::vector<std::string> partsIndexesA = split( partsLists[ 2 ], '/' );
