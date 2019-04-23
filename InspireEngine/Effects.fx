@@ -114,12 +114,12 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 
 		// Sample the pixel in the bump map.
 		textureNormal = ObjNormal.Sample( ObjSamplerState, input.TexCoord ).xyz; //4 * ( 1.0f - diffuse.g ) ).xyz;
-
+		float g = textureNormal.b;
 		textureNormal = ( ( textureNormal * 2.0f ) - 1.0f );
-		textureNormal.b = -( 1.0 - textureNormal.r * textureNormal.r - textureNormal.g * textureNormal.g );
+		textureNormal.b = -( 1.0 - textureNormal.r * textureNormal.r - textureNormal.g * textureNormal.g ); //g;// ( 1.0 - textureNormal.r * textureNormal.r - textureNormal.g * textureNormal.g );
 
 		// Move to tangentspace
-		bumpNormal = normalize( mul( textureNormal, input.WorldToTangentSpace ) );
+		bumpNormal = normalize( mul( normalize(textureNormal), input.WorldToTangentSpace ) );
 
 		// Reflect and fip z to sample cubemap
 		float3 cubeSampCoords = reflect( vecWorldProjection, bumpNormal );// Normal are reblended with model normals
@@ -151,8 +151,8 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	if ( howMuchLight > 0.0f )
 	{
 		// 
-		float occlusion = ( ObjNormal.Sample( ObjSamplerState, input.TexCoord + 0.001f ).b ) - abs( textureNormal.b );
-		howMuchLight = howMuchLight * saturate( 1.0 - abs( occlusion ) );
+		float occlusion = ( ObjNormal.Sample( ObjSamplerState, input.TexCoord + 0.001f ).b ) - ( textureNormal.b );
+		howMuchLight = howMuchLight / occlusion;
 
 		//Add light to the finalColor of the pixel
 		finalColor += ( SkyColor * howMuchLight + diffuse * light.diffuse * howMuchLight );// ( ( SkyColor * diffuse * light.diffuse ) * ( 2 * howMuchLight) );
