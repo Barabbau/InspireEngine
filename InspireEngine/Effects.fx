@@ -85,8 +85,6 @@ VS_OUTPUT VS_Instanced( float4 inPos : POSITION, float2 inTexCoord : TEXCOORD, f
 
 float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 {
-	
-
 	//Set diffuse color of material
 	float4 diffuse = tintColor;
 	float3 SkyColor = float3( 1.0f, 1.0f, 1.0f );
@@ -151,11 +149,11 @@ float4 ComputePS( VS_OUTPUT input, bool isTextured, float4 tintColor )
 	if ( howMuchLight > 0.0f )
 	{
 		// 
-		float occlusion = ( ObjNormal.Sample( ObjSamplerState, input.TexCoord + 0.001f ).b ) - ( textureNormal.b );
-		howMuchLight = howMuchLight / occlusion;
+		//float occlusion = ( ObjNormal.Sample( ObjSamplerState, input.TexCoord + 0.001f ).b ) - ( textureNormal.b );
+		howMuchLight = howMuchLight;// / occlusion;
 
 		//Add light to the finalColor of the pixel
-		finalColor += ( SkyColor * howMuchLight + diffuse * light.diffuse * howMuchLight );// ( ( SkyColor * diffuse * light.diffuse ) * ( 2 * howMuchLight) );
+		finalColor += ( SkyColor * howMuchLight + diffuse * light.diffuse * howMuchLight );
 
 		//Calculate Light's Distance Falloff factor
 		finalColor /= ( light.att[ 0 ] + ( light.att[ 1 ] * d ) ) + ( light.att[ 2 ] * ( d * d ) );

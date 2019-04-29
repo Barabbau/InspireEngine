@@ -27,6 +27,7 @@
 #include <fstream>
 #include <istream>
 
+
 #include "VertexLayout.h"
 #include "InspireUtils.h"
 #include "DXShaderManager.h"
@@ -38,6 +39,7 @@
 #include "EditorMesh.h"
 #include "EditorMeshInstanced.h"
 #include "SceneGraph.h"
+#include "SsaoManager.h"
 
 
 //Global Declarations - Interfaces//
@@ -53,7 +55,6 @@ ID3D10Blob* D2D_PS_Buffer;
 
 //ID3D11InputLayout* vertLayout;
 ID3D11Buffer* cbPerObjectBuffer;
-ID3D11BlendState* d2dTransparency;
 ID3D11RasterizerState* CCWcullMode;
 ID3D11RasterizerState* CWcullMode;
 
@@ -85,8 +86,6 @@ ID3D11Buffer* sphereVertBuffer;
 ID3D11DepthStencilState* DSLessEqual;
 ID3D11RasterizerState* RSCullNone;
 
-///////////////**************new**************////////////////////
-ID3D11BlendState* Transparency;
 
 std::wstring printText;
 
@@ -146,6 +145,7 @@ Mesh _mesh;
 typedef std::shared_ptr<EditorMesh> EditorMeshPtr;
 
 DXShaderManager* _shaderManager;
+SsaoManager* _ssaoManager;
 std::vector<SurfaceMaterial> _materialsList;
 EditorMeshInstanced* editorMeshInstanced;
 std::vector<EditorMeshPtr> *_lstEditorObject3Ds;
@@ -567,7 +567,7 @@ void CleanUp( )
 	depthStencilView->Release( );
 	depthStencilBuffer->Release( );
 	cbPerObjectBuffer->Release( );
-	Transparency->Release( );
+	//Transparency->Release( );
 	CCWcullMode->Release( );
 	CWcullMode->Release( );
 
@@ -884,6 +884,14 @@ bool InitScene( )
 	_shaderManager->_stdShader = new DXShader( "VS", "PS", *layout, numElements, *d3d11Device );
 	_shaderManager->_stdShaderInstanced = new DXShader( "VS_Instanced", "PS_Instanced", *layout, numElements, *d3d11Device );
 
+	_ssaoManager = new SsaoManager(
+		*d3d11Device,
+		*d3d11DevCon,
+		L"Effect_ComputeSSAOMap.fx",
+		*_shaderManager,
+		Width,
+		Height );
+
 	//Compile Shaders from shader file
 	hr = D3DX11CompileFromFile( L"Effects.fx", 0, 0, "D2D_PS", "ps_4_0", 0, 0, 0, &D2D_PS_Buffer, 0, 0 );
 	_skyShader = new DXShader( "SKYMAP_VS", "SKYMAP_PS", *layout, numElements, *d3d11Device );
@@ -1045,44 +1053,6 @@ bool InitScene( )
 	EditorMeshPtr ground( _groundPlane );
 	_sceneGraph->SceneObjects->push_back( ground );
 	//_camera->CamPosition = XMLoadFloat3( &_sceneGraph->InstancedObjects->end( )._Ptr->_Myval.second->_spawnPoints->at( 0 )->position );// InstancedObjects->end( )._Ptr->_Myval.second->_spawnPoints.at( 0 ));
-
-	D3D11_BLEND_DESC blendDesc;
-	ZeroMemory( &blendDesc, sizeof( blendDesc ) );
-
-	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
-	ZeroMemory( &rtbd, sizeof( rtbd ) );
-
-	rtbd.BlendEnable = true;
-	rtbd.SrcBlend = D3D11_BLEND_SRC_COLOR;
-	rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-	rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
-	rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
-	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
-
-	blendDesc.AlphaToCoverageEnable = false;
-	blendDesc.RenderTarget[ 0 ] = rtbd;
-
-	d3d11Device->CreateBlendState( &blendDesc, &d2dTransparency );
-
-	///////////////**************new**************////////////////////
-	ZeroMemory( &rtbd, sizeof( rtbd ) );
-
-	rtbd.BlendEnable = true;
-	rtbd.SrcBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	rtbd.DestBlend = D3D11_BLEND_SRC_ALPHA;
-	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-	rtbd.SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	rtbd.DestBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
-
-	blendDesc.AlphaToCoverageEnable = false;
-	blendDesc.RenderTarget[ 0 ] = rtbd;
-
-	d3d11Device->CreateBlendState( &blendDesc, &Transparency );
-
 
 	///Load Skymap's cube texture///
 	D3DX11_IMAGE_LOAD_INFO loadSMInfo;
@@ -1259,7 +1229,7 @@ void RenderText( std::wstring text, int inInt )
 	//And only the stuff we draw with D2D will be visible (the text)
 
 	//Set the blend state for D2D render target texture objects
-	d3d11DevCon->OMSetBlendState( d2dTransparency, NULL, 0xffffffff );
+	d3d11DevCon->OMSetBlendState( _shaderManager->D2dTransparency, NULL, 0xffffffff );
 
 	//Set the d2d Index buffer
 	d3d11DevCon->IASetIndexBuffer( d2dIndexBuffer, DXGI_FORMAT_R32_UINT, 0 );
@@ -1278,6 +1248,28 @@ void RenderText( std::wstring text, int inInt )
 	d3d11DevCon->RSSetState( CWcullMode );
 	d3d11DevCon->DrawIndexed( 6, 0, 0 );
 }
+///<summary>
+///This Util is to Copy a render target to a New texture
+///<para>this must be used when the Shader Resource View that we want to use as input</para>
+///<para>is STILL Binded as output render target</para>
+///</summary>
+///<param name='pd3dImmediateContext'>the Context</param>
+void CopyResource( ID3D11DeviceContext &d3dDevCon )
+{
+	ID3D11Resource*		myDestTexture = nullptr;
+	ID3D11Resource*		myInTexture = nullptr;
+
+	depthStencilView->GetResource( &myInTexture );
+
+	d3dDevCon.CopyResource( myDestTexture, myInTexture );
+
+	{
+		if ( myInTexture )
+		{
+			( myInTexture )->Release( ); ( myInTexture ) = nullptr;
+		}
+	}
+}
 
 void DrawScene( )
 {
@@ -1290,8 +1282,28 @@ void DrawScene( )
 
 	XMMATRIX VP = _camera->CamView * _camera->CamProjection;
 
+	/////////////////
+	// SSA0
+	// STEP 1
+	_ssaoManager->SetupDepthRenderTarget( 
+		*d3d11Device, 
+		*d3d11DevCon );
+
+	// STEP 2
+	_sceneGraph->RenderDepth(
+		*d3d11DevCon,
+		VP,
+		*_ssaoManager->SsaoCreateShader,
+		*_lstEditorObject3Ds,
+		*_shaderManager );
+		
+	// STEP 3
+	d3d11DevCon->OMSetBlendState( 0, 0, 0xffffffff );
+
+	// STEP 4
 	//Set our Render Target
 	d3d11DevCon->OMSetRenderTargets( 1, &renderTargetView, depthStencilView );
+	////////////////////////
 
 	//Set the default blend state (no blending) for opaque objects
 	d3d11DevCon->OMSetBlendState( 0, 0, 0xffffffff );
@@ -1330,14 +1342,17 @@ void DrawScene( )
 		*/
 	//editorMeshInstanced->RenderInstanced( VP );
 
-	_sceneGraph->Render( *d3d11DevCon,
-					VP,
-					_materialsList,
-					*_lstEditorObject3Ds,
-					*_shaderManager,
-					cameraPosition,
-					cameraForward,
-					*_light );
+	_sceneGraph->CalculateLods( 
+		cameraPosition,
+		cameraForward );
+
+	_sceneGraph->Render( 
+		*d3d11DevCon,
+		VP,
+		_materialsList,
+		*_lstEditorObject3Ds,
+		*_shaderManager,
+		*_light );
 	//////////////////////////////////////////////////////////////////
 	
 	
@@ -1376,7 +1391,12 @@ void DrawScene( )
 	d3d11DevCon->OMSetDepthStencilState( NULL, 0 );
 	//////////////////////////////////////////////////////////////////
 
-
+	
+	_ssaoManager->Draw(
+		*d3d11Device,
+		*d3d11DevCon,
+		Width,
+		Height );
 	
 	///////////////**************new**************////////////////////	
 	//Draw our model's TRANSPARENT subsets now

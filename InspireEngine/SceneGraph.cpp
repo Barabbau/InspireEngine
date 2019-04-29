@@ -204,6 +204,17 @@ bool SceneGraph::SceneRead(
 	}
 }
 
+void SceneGraph::CalculateLods(
+	XMVECTOR cameraPosition,
+	XMVECTOR cameraForward )
+{
+	for ( auto it : *this->SceneObjects )
+	{
+		it->CalculateLod(
+				cameraPosition,
+				cameraForward  );
+	}
+}
 
 void SceneGraph::Render(
 	ID3D11DeviceContext &d3d11DevCon,
@@ -211,20 +222,33 @@ void SceneGraph::Render(
 	std::vector<SurfaceMaterial> &materialsList,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 	DXShaderManager &shaderManager,
-	XMVECTOR cameraPosition,
-	XMVECTOR cameraForward,
 	Light &light )
 {
 	for ( auto it : *this->SceneObjects )
 	{
-		it->RenderObject( d3d11DevCon,
+		it->Render( d3d11DevCon,
 				viewProjection,
 				materialsList,
 				lstEditorObject3Ds,
 				shaderManager,
-				cameraPosition,
-				cameraForward,
 				light );
+	}
+}
+
+void SceneGraph::RenderDepth(
+		ID3D11DeviceContext &d3d11DevCon,
+		XMMATRIX viewProjection,
+		DXShader &shader,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager )
+{
+	for ( auto it : *this->SceneObjects )
+	{
+		it->RenderDepth( d3d11DevCon,
+				viewProjection,
+				shader,
+				lstEditorObject3Ds,
+				shaderManager );
 	}
 }
 

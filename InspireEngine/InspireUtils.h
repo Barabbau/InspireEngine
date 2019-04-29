@@ -20,6 +20,7 @@
 #include "Light.h"
 
 
+
 class InspireUtils
 {
 	public:

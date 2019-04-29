@@ -360,10 +360,9 @@ void EditorMesh::Render(
 	std::vector<SurfaceMaterial> &materialsList,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 	DXShaderManager &shaderManager,
-	Light &light,
-	INT32 lodIndex )
+	Light &light )
 {
-	switch ( lodIndex )
+	switch ( this->LodIndex )
 	{
 		case 0:
 		{
@@ -422,34 +421,80 @@ void EditorMesh::Render(
 	}
 }
 
-/// <summary>
-/// Render the 3D object
-/// Select the correct LOD to render
-/// </summary>
-/// <param name="d3d11DevCon">DirectX Device context</param>
-/// <param name="viewProjection">The Camera view projetion</param>
-/// <param name="materialsList">The World Material List</param>
-/// <param name="lstEditorObject3Ds">The list of Objects of the World</param>
-/// <param name="shaderManager">The World Shader Manager</param>
-/// <param name="blendManager">The World Blend Manager</param>
-/// <param name="rot">rotation</param>
-/// <param name="pos">position</param>
-/// <param name="scale">scale</param>
-/// <param name="lodIndex">lod Index</param>
-void EditorMesh::RenderObject(
+void EditorMesh::RenderDepth(
 	ID3D11DeviceContext &d3d11DevCon,
 	XMMATRIX viewProjection,
-	std::vector<SurfaceMaterial> &materialsList,
+	DXShader &shader,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-	DXShaderManager &shaderManager,
+	DXShaderManager &shaderManager )
+{
+	switch ( this->LodIndex )
+	{
+		case 0:
+		{
+			if ( this->InstanceId != -1 )
+			{
+				lstEditorObject3Ds.at( this->InstanceId )->_meshDx->DrawDepth( 
+					d3d11DevCon,
+					shader,
+					viewProjection,
+					shaderManager,
+					this->Transform );
+			}
+			else
+			{
+				this->_meshDx->DrawDepth( 
+					d3d11DevCon,
+					shader,
+					viewProjection,					
+					shaderManager,
+					this->Transform );
+			}
+			break;
+		}
+
+		case 1:
+		{
+			if ( LodId != -1 )
+			{
+				lstEditorObject3Ds.at( this->LodId )->_meshDx->DrawDepth(
+					d3d11DevCon,
+					shader,
+					viewProjection,
+					shaderManager,
+					this->Transform );
+			}
+			break;
+		}
+
+		case 2:
+		{
+			this->BBox->_meshDx->DrawDepth(
+				d3d11DevCon,
+				shader,
+				viewProjection,
+				shaderManager,
+				this->Transform );
+			break;
+		}
+
+		default:
+		{
+		}
+		break;
+	}
+}
+
+/// <summary>
+/// CalculateLod
+/// Select the correct LOD to render
+/// </summary>
+void EditorMesh::CalculateLod(
 	XMVECTOR cameraPosition,
-	XMVECTOR cameraForward,
-	Light &light )
+	XMVECTOR cameraForward )
 {
 	if ( !this->IsLod )
-	{
-		INT32 lodIndex = 0;
-
+	{	
 		XMVECTOR objPosition = XMVectorSet(
 				this->Transform._41,
 				this->Transform._42,
@@ -588,6 +633,7 @@ void EditorMesh::RenderObject(
 
 			if ( dot > 0.0f )
 			{
+				this->LodIndex = 3;
 				return;
 			}
 		}
@@ -628,32 +674,28 @@ void EditorMesh::RenderObject(
 
 		if ( clippedMin && clippedMax )
 		*/
+		this->LodIndex = 0;
 
 		// LOD switch
 		if ( distanceFromCamera >= this->lodSegments[ 0 ]
 				&& distanceFromCamera < this->lodSegments[ 1 ]
 				&& this->LodId != -1 )
 		{
-			lodIndex = 1;
+			this->LodIndex = 1;
 		}
 		else if ( distanceFromCamera >= this->lodSegments[ 1 ]
 				&& distanceFromCamera < this->lodSegments[ 2 ] )
 		{
-			lodIndex = 2;
+			this->LodIndex = 2;
 		}
 		else if ( distanceFromCamera >= this->lodSegments[ 2 ] )
 		{
-			return;
+			this->LodIndex = 3;
 		}
-
-		Render(
-			d3d11DevCon,
-			viewProjection,
-			materialsList,
-			lstEditorObject3Ds,
-			shaderManager,
-			light, 
-			lodIndex );
+	}
+	else
+	{
+	    this->LodIndex = 3;
 	}
 }
 

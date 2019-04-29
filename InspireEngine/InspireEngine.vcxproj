@@ -149,6 +149,10 @@
     <PostBuildEvent>
       <Command>C:\Windows\Microsoft.NET\Framework64\v2.0.50727\RegAsm.exe</Command>
     </PostBuildEvent>
+    <FxCompile>
+      <ShaderType>Effect</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
@@ -162,6 +166,7 @@
     <ClCompile Include="DXShader.cpp" />
     <ClCompile Include="SceneGraph.cpp" />
     <ClCompile Include="SpawnPoint.cpp" />
+    <ClCompile Include="SsaoManager.cpp" />
     <ClCompile Include="SurfaceMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +174,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="cbDepthPerFrame.h" />
     <ClInclude Include="cbPerFrame.h" />
     <ClInclude Include="cbPerInstancedObject.h" />
     <ClInclude Include="cbPerObject.h" />
@@ -183,8 +189,14 @@
     <ClInclude Include="DXShader.h" />
     <ClInclude Include="SceneGraph.h" />
     <ClInclude Include="SpawnPoint.h" />
+    <ClInclude Include="SsaoManager.h" />
+    <ClInclude Include="SsaoVertexLayout.h" />
     <ClInclude Include="SurfaceMaterial.h" />
     <ClInclude Include="VertexLayout.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Effect_ComputeSSAOMap.fx" />
+    <FxCompile Include="Effect_CreateDepthMap.fx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

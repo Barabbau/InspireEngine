@@ -55,6 +55,13 @@ class MeshDX
 		XMMATRIX World,
 		Light &light );
 
+	void MeshDX::DrawDepth(
+		ID3D11DeviceContext &d3d11DevCon,
+		DXShader &shader,
+		XMMATRIX viewProjection,
+		DXShaderManager &shaderManager,
+		XMMATRIX World );
+
 	void MeshDX::DrawInstanced(
 		ID3D11DeviceContext &d3d11DevCon,
 		XMMATRIX viewProjection,

@@ -6,11 +6,12 @@ DXShader::DXShader( LPCSTR vsFunctionName,
 					LPCSTR psFunctionName,
 					D3D11_INPUT_ELEMENT_DESC &layout,
 					int numElements,
-					ID3D11Device &d3d11Device )
+					ID3D11Device &d3d11Device,
+					LPWSTR fileName )
 {
 	// ctor
 	// Compile Shaders from shader file
-	this->hr = this->Compile( vsFunctionName, psFunctionName, d3d11Device );
+	this->hr = this->Compile( vsFunctionName, psFunctionName, d3d11Device, fileName );
 
 	// Create the Input Layout
 	this->hr = this->SetInputLayout( layout, numElements, d3d11Device );
@@ -27,17 +28,18 @@ DXShader::~DXShader( )
 
 HRESULT DXShader::Compile( LPCSTR vsFunctionName,
 						   LPCSTR psFunctionName,
-						   ID3D11Device &d3d11Device )
+						   ID3D11Device &d3d11Device, 
+						   LPWSTR fileName )
 {
 	//Compile Shaders from shader file
 	if ( vsFunctionName != nullptr )
 	{
-		hr = D3DX11CompileFromFile( L"Effects.fx", 0, 0, vsFunctionName, "vs_4_0", 0, 0, 0, &VS_Buffer, 0, 0 );
+		hr = D3DX11CompileFromFile( fileName != nullptr ? fileName : L"Effects.fx", 0, 0, vsFunctionName, "vs_4_0", 0, 0, 0, &VS_Buffer, 0, 0 );
 	}
 
 	if ( psFunctionName != nullptr )
 	{
-		hr = D3DX11CompileFromFile( L"Effects.fx", 0, 0, psFunctionName, "ps_4_0", 0, 0, 0, &PS_Buffer, 0, 0 );
+		hr = D3DX11CompileFromFile( fileName != nullptr ? fileName : L"Effects.fx", 0, 0, psFunctionName, "ps_4_0", 0, 0, 0, &PS_Buffer, 0, 0 );
 	}
 
 	//Create the Shader Objects

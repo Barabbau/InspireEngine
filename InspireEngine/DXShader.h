@@ -23,12 +23,14 @@ class DXShader
 			  LPCSTR psFunctionName,
 			  D3D11_INPUT_ELEMENT_DESC &layout,
 			  int numElements,
-			  ID3D11Device &d3d11Device );
+			  ID3D11Device &d3d11Device,
+			  LPWSTR fileName = nullptr );
 	~DXShader( );
 
 	HRESULT DXShader::Compile( LPCSTR vsFunctionName,
 							   LPCSTR psFunctionName,
-							   ID3D11Device &d3d11Device );
+							   ID3D11Device &d3d11Device,
+							   LPWSTR fileName = nullptr );
 
 	HRESULT DXShader::SetInputLayout( D3D11_INPUT_ELEMENT_DESC &layout,
 									  int numElements,

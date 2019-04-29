@@ -11,6 +11,7 @@
 #include "cbPerObject.h"
 #include "cbPerObjectInstanced.h"
 #include "cbPerFrame.h"
+#include "cbDepthPerFrame.h"
 
 class DXShaderManager
 {
@@ -24,18 +25,23 @@ class DXShaderManager
 
 	ID3D11SamplerState* TexSamplerState;
 
-
+	// Constant Buffer Buffers
 	ID3D11BufferPtr cbPerFrameBuffer;
+	ID3D11BufferPtr cbDepthPerFrameBuffer;
 	ID3D11BufferPtr cbPerObjectBuffer;
 	ID3D11BufferPtr cbPerObjectBufferInstanced;
 
-	
+	// Constant Buffer structures
+	cbPerFrame cbPerFrame;
+	cbDepthPerFrame cbDepthPerFrame;
 	cbPerObject cbPerObj;
 	cbPerObjectInstanced cbPerObjInstanced;
-	cbPerFrame constbuffPerFrame;
+	
 
 	ID3D11BlendStatePtr Transparency;
-	ID3D11BlendStatePtr d2dTransparency;
+	ID3D11BlendStatePtr D2dTransparency;
+	ID3D11BlendStatePtr	D3dAlphaBlendState;
+	ID3D11BlendStatePtr D3dDepthTestsBlendState;
 
 	// Skybox texture
 	ID3D11ShaderResourceView* skyboxTexture;

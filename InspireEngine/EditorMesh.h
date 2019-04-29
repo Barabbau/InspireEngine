@@ -16,60 +16,60 @@ class EditorMesh
 	EditorMesh( );
 	
 	EditorMesh( ID3D11DeviceContext &d3d11DevCon,
-				ID3D11Device &d3d11Device,
-				std::string fileName,
-				std::string pathModels,
-				XMFLOAT3 rot,
-				XMFLOAT3 pos,
-				XMFLOAT3 scale,
-				bool useBboxLod,
-				std::vector<SurfaceMaterial> &materialsList,
-				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-				DXShaderManager &shaderManager,
-				Light &light,
-				InspireUtils &inspireUtils,
-				INT32 materialType,
-				EditorMeshPtr BBox = nullptr,
-				XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+		ID3D11Device &d3d11Device,
+		std::string fileName,
+		std::string pathModels,
+		XMFLOAT3 rot,
+		XMFLOAT3 pos,
+		XMFLOAT3 scale,
+		bool useBboxLod,
+		std::vector<SurfaceMaterial> &materialsList,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager,
+		Light &light,
+		InspireUtils &inspireUtils,
+		INT32 materialType,
+		EditorMeshPtr BBox = nullptr,
+		XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
 
 	EditorMesh(	ID3D11DeviceContext &d3d11DevCon,
-				ID3D11Device &d3d11Device,
-				std::string objectName,
-				std::string pathModels,
-				std::string albedoName,
-				std::vector<DXVertex> &v,
-				std::vector<DWORD> &indices,
-				XMFLOAT3 rot,
-				XMFLOAT3 pos,
-				XMFLOAT3 scale,
-				bool useBboxLod,
-				std::vector<SurfaceMaterial> &materialsList,
-				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-				DXShaderManager &shaderManager,
-				Light &light,
-				InspireUtils &inspireUtils,
-				INT32 materialType,
-				EditorMeshPtr BBoxnullptr,
-				XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+		ID3D11Device &d3d11Device,
+		std::string objectName,
+		std::string pathModels,
+		std::string albedoName,
+		std::vector<DXVertex> &v,
+		std::vector<DWORD> &indices,
+		XMFLOAT3 rot,
+		XMFLOAT3 pos,
+		XMFLOAT3 scale,
+		bool useBboxLod,
+		std::vector<SurfaceMaterial> &materialsList,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager,
+		Light &light,
+		InspireUtils &inspireUtils,
+		INT32 materialType,
+		EditorMeshPtr BBoxnullptr,
+		XMCOLOR color = XMCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
 
 	void Render(
-				ID3D11DeviceContext &d3d11DevCon,
-				XMMATRIX viewProjection,
-				std::vector<SurfaceMaterial> &materialsList,
-				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-				DXShaderManager &shaderManager,
-				Light &light,
-				INT32 lodIndex );
+		ID3D11DeviceContext &d3d11DevCon,
+		XMMATRIX viewProjection,
+		std::vector<SurfaceMaterial> &materialsList,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager,
+		Light &light );
 
-	void EditorMesh::RenderObject(
-				ID3D11DeviceContext &d3d11DevCon,
-				XMMATRIX viewProjection,
-				std::vector<SurfaceMaterial> &materialsList,
-				std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-				DXShaderManager &shaderManager,
-				XMVECTOR cameraPosition,
-		XMVECTOR cameraForward,
-				Light &light );
+	void RenderDepth(
+		ID3D11DeviceContext &d3d11DevCon,
+		XMMATRIX viewProjection,
+		DXShader &shader,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager );
+
+	void EditorMesh::CalculateLod(
+		XMVECTOR cameraPosition,
+		XMVECTOR cameraForward );
 
 	~EditorMesh( );
 
@@ -91,6 +91,11 @@ class EditorMesh
 	/// Returns true if the Object is an LOD Object
 	/// </summary>
 	bool IsLod;
+
+	/// <summary>
+	/// actual Lod
+	/// </summary>
+	INT32 LodIndex = 0;
 
 	/// <summary>
 	/// The id of the LOD Object to render in the Objects list

@@ -375,6 +375,56 @@ void MeshDX::DisposeBuffers( bool cleanAll )
 	}
 }
 
+/// <summary>
+/// Draw Standard Objects
+/// </summary>
+void MeshDX::DrawDepth(
+	ID3D11DeviceContext &d3d11DevCon,
+	DXShader &shader,
+	XMMATRIX viewProjection,
+	DXShaderManager &shaderManager,
+	XMMATRIX World )
+{
+	UINT stride = sizeof( DXVertex );
+	UINT offset = 0;
+
+	XMMATRIX meshWorld = XMMatrixIdentity( );
+
+	//Set the WVP matrix and send it to the constant buffer in effect file
+	XMMATRIX WVP = World * viewProjection;
+
+	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
+
+	for ( size_t i = 0; i < this->_originalObject3D->MaterialIds.size( ); ++i )
+	{
+		INT32 materialId = this->_originalObject3D->MaterialIds[ i ];
+
+		d3d11DevCon.IASetInputLayout( shader.VertLayout );
+
+		//Set Vertex and Pixel Shaders
+		d3d11DevCon.VSSetShader( shader.VS, 0, 0 );
+		d3d11DevCon.PSSetShader( shader.PS, 0, 0 );
+
+		// set per frame constant buffer
+		shaderManager.cbDepthPerFrame.WorldViewProjection = XMMatrixTranspose( WVP );
+
+		d3d11DevCon.UpdateSubresource( shaderManager.cbDepthPerFrameBuffer, 0, NULL, &shaderManager.cbDepthPerFrame, 0, 0 );
+		d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbDepthPerFrameBuffer.p );
+		d3d11DevCon.PSSetConstantBuffers( 0, 1, &shaderManager.cbDepthPerFrameBuffer.p );
+
+		for ( INT32 a = 0; a < this->_indexBufferArray->at( materialId ).size( ); a++ )
+		{
+			//Set the grounds index buffer
+			d3d11DevCon.IASetIndexBuffer( this->_indexBufferArray->at( materialId ).at( a ), DXGI_FORMAT_R32_UINT, 0 );
+
+			//Set the grounds vertex buffer
+			d3d11DevCon.IASetVertexBuffers( 0, 1, &this->_vertexBufferArray->at( materialId ).at( a ), &stride, &offset );
+
+
+			d3d11DevCon.DrawIndexed( this->_bufferSize->at( materialId ).at( a ), 0, 0 );
+		}
+	}
+}
 
 /// <summary>
 /// Draw Standard Objects
@@ -416,14 +466,16 @@ void MeshDX::Draw(
 			d3d11DevCon.OMSetBlendState( 0, 0, 0xffffffff );
 		}
 
+		d3d11DevCon.IASetInputLayout( surfaceMaterial->shader->VertLayout );
+
 		//Set Vertex and Pixel Shaders
 		d3d11DevCon.VSSetShader( surfaceMaterial->shader->VS, 0, 0 );
 		d3d11DevCon.PSSetShader( surfaceMaterial->shader->PS, 0, 0 );
 
 		// set per frame constant buffer
-		shaderManager.constbuffPerFrame.light = light;
+		shaderManager.cbPerFrame.light = light;
 
-		d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.constbuffPerFrame, 0, 0 );
+		d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.cbPerFrame, 0, 0 );
 		d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
 		d3d11DevCon.PSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
 
@@ -511,15 +563,16 @@ void MeshDX::DrawInstanced(
 			d3d11DevCon.OMSetBlendState( 0, 0, 0xffffffff );
 		}
 
+		d3d11DevCon.IASetInputLayout( surfaceMaterial->shader->VertLayout );
 
 		//Set Vertex and Pixel Shaders
 		d3d11DevCon.VSSetShader( surfaceMaterial->shader->VS, 0, 0 );
 		d3d11DevCon.PSSetShader( surfaceMaterial->shader->PS, 0, 0 );
 
 		// set per frame constant buffer
-		shaderManager.constbuffPerFrame.light = light;
+		shaderManager.cbPerFrame.light = light;
 
-		d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.constbuffPerFrame, 0, 0 );
+		d3d11DevCon.UpdateSubresource( shaderManager.cbPerFrameBuffer, 0, NULL, &shaderManager.cbPerFrame, 0, 0 );
 		d3d11DevCon.VSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
 		d3d11DevCon.PSSetConstantBuffers( 0, 1, &shaderManager.cbPerFrameBuffer.p );
 
