@@ -2,72 +2,6 @@
 
 #include "MeshDX.h"
 
-/*	//Draw our model's NON-transparent subsets
-	for(int i = 0; i < meshSubsets; ++i)
-	{
-		//Set the grounds index buffer
-		d3d11DevCon->IASetIndexBuffer( meshIndexBuff, DXGI_FORMAT_R32_UINT, 0);
-		//Set the grounds vertex buffer
-		d3d11DevCon->IASetVertexBuffers( 0, 1, &meshVertBuff, &stride, &offset );
-
-		//Set the WVP matrix and send it to the constant buffer in effect file
-		WVP = meshWorld * _camera.CamView * _camera.CamProjection;
-
-		cbPerObj.WVP = XMMatrixTranspose(WVP);	
-		cbPerObj.World = XMMatrixTranspose(meshWorld);	
-		cbPerObj.difColor = material[meshSubsetTexture[i]].difColor;
-		cbPerObj.hasTexture = material[meshSubsetTexture[i]].hasTexture;
-
-		d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0 );
-
-		d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
-		d3d11DevCon->PSSetConstantBuffers( 1, 1, &cbPerObjectBuffer );
-
-		if(material[meshSubsetTexture[i]].hasTexture)
-			d3d11DevCon->PSSetShaderResources( 0, 1, &meshSRV[material[meshSubsetTexture[i]].texArrayIndex] );
-
-		d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
-
-		d3d11DevCon->RSSetState(RSCullNone);
-		int indexStart = meshSubsetIndexStart[i];
-		int indexDrawAmount =  meshSubsetIndexStart[i+1] - meshSubsetIndexStart[i];
-		if(!material[meshSubsetTexture[i]].transparent)
-			d3d11DevCon->DrawIndexed( indexDrawAmount, indexStart, 0 );
-	}
-
-		//Draw our model's TRANSPARENT subsets now
-
-	//Set our blend state
-	d3d11DevCon->OMSetBlendState(Transparency, NULL, 0xffffffff);
-
-	for(int i = 0; i < meshSubsets; ++i)
-	{
-		//Set the grounds index buffer
-		d3d11DevCon->IASetIndexBuffer( meshIndexBuff, DXGI_FORMAT_R32_UINT, 0);
-		//Set the grounds vertex buffer
-		d3d11DevCon->IASetVertexBuffers( 0, 1, &meshVertBuff, &stride, &offset );
-
-		//Set the WVP matrix and send it to the constant buffer in effect file
-		WVP = meshWorld * _camera.CamView * _camera.CamProjection;
-		cbPerObj.WVP = XMMatrixTranspose(WVP);
-		cbPerObj.World = XMMatrixTranspose(meshWorld);
-		cbPerObj.difColor = material[meshSubsetTexture[i]].difColor;
-		cbPerObj.hasTexture = material[meshSubsetTexture[i]].hasTexture;
-		d3d11DevCon->UpdateSubresource( cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0 );
-		d3d11DevCon->VSSetConstantBuffers( 0, 1, &cbPerObjectBuffer );
-		d3d11DevCon->PSSetConstantBuffers( 1, 1, &cbPerObjectBuffer );
-		if(material[meshSubsetTexture[i]].hasTexture)
-			d3d11DevCon->PSSetShaderResources( 0, 1, &meshSRV[material[meshSubsetTexture[i]].texArrayIndex] );
-		d3d11DevCon->PSSetSamplers( 0, 1, &CubesTexSamplerState );
-
-		d3d11DevCon->RSSetState(RSCullNone);
-		int indexStart = meshSubsetIndexStart[i];
-		int indexDrawAmount =  meshSubsetIndexStart[i+1] - meshSubsetIndexStart[i];
-		if(material[meshSubsetTexture[i]].transparent)
-			d3d11DevCon->DrawIndexed( indexDrawAmount, indexStart, 0 );
-	}
-	*/
-
 MeshDX::MeshDX( Mesh& originalObject3D )
 {
 	//ctor
@@ -108,7 +42,6 @@ void MeshDX::CreateVertexBufferArray( ID3D11Device &d3d11Device )
 				facesList.push_back( this->_originalObject3D->Faces[ f ] );
 			}
 		}
-
 
 		INT32 numPrimitives = facesList.size( );
 		INT32 offset = 0;
@@ -177,7 +110,6 @@ INT32 MeshDX::AddVertexBuffer(
 				indexData.push_back( ( DWORD ) stdIndex );
 			}
 		}
-
 
 		INT32 index = 0;
 
@@ -381,6 +313,7 @@ void MeshDX::DisposeBuffers( bool cleanAll )
 void MeshDX::DrawDepth(
 	ID3D11DeviceContext &d3d11DevCon,
 	DXShader &shader,
+	std::vector<SurfaceMaterial> &materialsList,
 	XMMATRIX viewProjection,
 	DXShaderManager &shaderManager,
 	XMMATRIX World )
@@ -388,16 +321,20 @@ void MeshDX::DrawDepth(
 	UINT stride = sizeof( DXVertex );
 	UINT offset = 0;
 
-	XMMATRIX meshWorld = XMMatrixIdentity( );
-
 	//Set the WVP matrix and send it to the constant buffer in effect file
 	XMMATRIX WVP = World * viewProjection;
 
-	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
+	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState.p );
 
 	for ( size_t i = 0; i < this->_originalObject3D->MaterialIds.size( ); ++i )
 	{
 		INT32 materialId = this->_originalObject3D->MaterialIds[ i ];
+		SurfaceMaterial* surfaceMaterial = &materialsList[ materialId ];
+
+		if ( surfaceMaterial->transparent )
+		{
+			continue;
+		}
 
 		d3d11DevCon.IASetInputLayout( shader.VertLayout );
 
@@ -447,7 +384,7 @@ void MeshDX::Draw(
 	
 	shaderManager.cbPerObj.World = XMMatrixTranspose( World );
 
-	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
+	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState.p );
 
 	for ( size_t i = 0; i < this->_originalObject3D->MaterialIds.size( ); ++i )
 	{
@@ -543,7 +480,7 @@ void MeshDX::DrawInstanced(
 		shaderManager.cbPerObjInstanced.World[ i ] = World[ i ];
 	}
 
-	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState );
+	d3d11DevCon.PSSetSamplers( 0, 1, &shaderManager.TexSamplerState.p );
 
 
 	for ( size_t i = 0; i < this->_originalObject3D->MaterialIds.size( ); ++i )

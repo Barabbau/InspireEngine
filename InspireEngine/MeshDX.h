@@ -58,6 +58,7 @@ class MeshDX
 	void MeshDX::DrawDepth(
 		ID3D11DeviceContext &d3d11DevCon,
 		DXShader &shader,
+		std::vector<SurfaceMaterial> &materialsList,
 		XMMATRIX viewProjection,
 		DXShaderManager &shaderManager,
 		XMMATRIX World );

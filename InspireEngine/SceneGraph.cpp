@@ -174,9 +174,9 @@ bool SceneGraph::SceneRead(
 					shaderManager,
 					light,
 					inspireUtils,
-					0, 
+					0,
 					bBox );
-				
+
 				if ( ( editorMesh->InstanceId == -1 && editorMesh->_mesh.vertices.size( ) > 0 )
 					|| editorMesh->InstanceId != -1 )
 				{
@@ -212,7 +212,7 @@ void SceneGraph::CalculateLods(
 	{
 		it->CalculateLod(
 				cameraPosition,
-				cameraForward  );
+				cameraForward );
 	}
 }
 
@@ -236,17 +236,19 @@ void SceneGraph::Render(
 }
 
 void SceneGraph::RenderDepth(
-		ID3D11DeviceContext &d3d11DevCon,
-		XMMATRIX viewProjection,
-		DXShader &shader,
-		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-		DXShaderManager &shaderManager )
+	ID3D11DeviceContext &d3d11DevCon,
+	XMMATRIX viewProjection,
+	DXShader &shader,
+	std::vector<SurfaceMaterial> &materialsList,
+	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+	DXShaderManager &shaderManager )
 {
 	for ( auto it : *this->SceneObjects )
 	{
 		it->RenderDepth( d3d11DevCon,
 				viewProjection,
 				shader,
+				materialsList,
 				lstEditorObject3Ds,
 				shaderManager );
 	}

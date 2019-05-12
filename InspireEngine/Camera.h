@@ -16,11 +16,15 @@ class Camera
 
 	float CamYaw = 0.0f;
 	float CamPitch = 0.0f;
+	float FarClip = 1000.0f;
+	float NearClip = 0.01f;
 
 	XMMATRIX camRotationMatrix;
 
 	XMMATRIX CamView;
 	XMMATRIX CamProjection;
+
+
 	
 	Camera( );
 	Camera( float Width, float Height );

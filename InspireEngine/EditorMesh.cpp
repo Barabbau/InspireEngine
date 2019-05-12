@@ -425,6 +425,7 @@ void EditorMesh::RenderDepth(
 	ID3D11DeviceContext &d3d11DevCon,
 	XMMATRIX viewProjection,
 	DXShader &shader,
+	std::vector<SurfaceMaterial> &materialsList,
 	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 	DXShaderManager &shaderManager )
 {
@@ -437,6 +438,7 @@ void EditorMesh::RenderDepth(
 				lstEditorObject3Ds.at( this->InstanceId )->_meshDx->DrawDepth( 
 					d3d11DevCon,
 					shader,
+					materialsList,
 					viewProjection,
 					shaderManager,
 					this->Transform );
@@ -446,6 +448,7 @@ void EditorMesh::RenderDepth(
 				this->_meshDx->DrawDepth( 
 					d3d11DevCon,
 					shader,
+					materialsList,
 					viewProjection,					
 					shaderManager,
 					this->Transform );
@@ -460,6 +463,7 @@ void EditorMesh::RenderDepth(
 				lstEditorObject3Ds.at( this->LodId )->_meshDx->DrawDepth(
 					d3d11DevCon,
 					shader,
+					materialsList,
 					viewProjection,
 					shaderManager,
 					this->Transform );
@@ -472,6 +476,7 @@ void EditorMesh::RenderDepth(
 			this->BBox->_meshDx->DrawDepth(
 				d3d11DevCon,
 				shader,
+				materialsList,
 				viewProjection,
 				shaderManager,
 				this->Transform );

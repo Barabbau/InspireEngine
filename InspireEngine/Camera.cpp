@@ -16,7 +16,7 @@ Camera::Camera( float Width, float Height )
 	CamView = XMMatrixLookAtLH( CamPosition, CamTarget, camUp );
 
 	//Set the Projection matrix
-	CamProjection = XMMatrixPerspectiveFovLH( 0.4f * 3.14f, Width / Height, 0.01f, 1000.0f );
+	CamProjection = XMMatrixPerspectiveFovLH( 0.4f * 3.14f, Width / Height, this->NearClip, this->FarClip );
 }
 
 Camera::Camera( )

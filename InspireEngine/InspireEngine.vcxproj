@@ -165,6 +165,7 @@
     <ClCompile Include="EditorMeshInstanced.cpp" />
     <ClCompile Include="DXShader.cpp" />
     <ClCompile Include="SceneGraph.cpp" />
+    <ClCompile Include="SkySphere.cpp" />
     <ClCompile Include="SpawnPoint.cpp" />
     <ClCompile Include="SsaoManager.cpp" />
     <ClCompile Include="SurfaceMaterial.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="InspireUtils.h" />
     <ClInclude Include="DXShader.h" />
     <ClInclude Include="SceneGraph.h" />
+    <ClInclude Include="SkySphere.h" />
     <ClInclude Include="SpawnPoint.h" />
     <ClInclude Include="SsaoManager.h" />
     <ClInclude Include="SsaoVertexLayout.h" />

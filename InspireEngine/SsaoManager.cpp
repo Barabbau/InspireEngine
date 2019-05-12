@@ -159,6 +159,8 @@ HRESULT  SsaoManager::Intialize(
 ///<param name='d3d11DevCon'>A pointer to the Device Context</param>
 void SsaoManager::Draw( ID3D11Device  &d3d11Device,
 						ID3D11DeviceContext &d3d11DevCon,
+						float nearClip,
+						float farClip,
 						float width,
 						float height )
 {
@@ -188,7 +190,7 @@ void SsaoManager::Draw( ID3D11Device  &d3d11Device,
 	//d3d11DevCon.IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST );
 
 	XMMATRIX view = XMMatrixIdentity( );
-	XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, width, height, 0.0f, 0.01f, 1000.0f ); //XMMatrixOrthographicOffCenterLH( 0.0f, width, height, 0.0f, 0.0f, 100.0f );
+	XMMATRIX projection = XMMatrixOrthographicOffCenterLH( 0.0f, width, height, 0.0f, nearClip, farClip ); //XMMatrixOrthographicOffCenterLH( 0.0f, width, height, 0.0f, 0.0f, 100.0f );
 	XMMATRIX worldMatrix = XMMatrixMultiply( view, projection );
 
 
@@ -201,7 +203,7 @@ void SsaoManager::Draw( ID3D11Device  &d3d11Device,
 
 	XMStoreFloat4x4( &shaderParameters.worldMatrix, XMMatrixTranspose( projectionWorldMatrix ) );
 
-	XMVECTOR testDistScale = XMVectorSet( 1000.0f, 100.0f, 100.0f, 100.0f ); //320.0f, 100.0f, 100.0f, 100.0f );
+	XMVECTOR testDistScale = XMVectorSet( 320.0f, nearClip, farClip, 100.0f ); //320.0f, 100.0f, 100.0f, 100.0f );
 	XMStoreFloat4( &shaderParameters.distanceScale, testDistScale );
 
 	// defines the max UV shift for the SSAO iteration samples
@@ -221,7 +223,7 @@ void SsaoManager::Draw( ID3D11Device  &d3d11Device,
 	// The Layer To Show
 	d3d11DevCon.PSSetShaderResources( 0, 1, &this->DepthShaderResource );
 	d3d11DevCon.PSSetShaderResources( 1, 1, &this->TexRandomNormal );
-	d3d11DevCon.PSSetSamplers( 0, 1, &this->ShaderManager.TexSamplerState );
+	d3d11DevCon.PSSetSamplers( 0, 1, &this->ShaderManager.TexSamplerState.p );
 
 	d3d11DevCon.UpdateSubresource( this->SsaoCBChangesEveryFrame.p, 0, NULL, &shaderParameters, 0, 0 );
 
@@ -314,12 +316,13 @@ HRESULT SsaoManager::UpdateResources(
 ///<param name='d3d11DevCon'>A pointer to the Device Context</param>
 void SsaoManager::SetupDepthRenderTarget( 
 	ID3D11Device  &d3d11Device,
-	ID3D11DeviceContext &d3d11DevCon )
+	ID3D11DeviceContext &d3d11DevCon,
+	float farClip )
 {
 	d3d11DevCon.OMSetRenderTargets( 1, &this->DepthRenderTarget, NULL );
 
 	// 10000.0f is the Far Clip Plane Distance that is the farthest default depth value
-	float ClearColor[ 4 ] = { 10000.0f, 10000.0f, 10000.0f, 10000.0f };
+	float ClearColor[ 4 ] = { farClip, 0.0f, 0.0f, 0.0f };
 
 	d3d11DevCon.ClearRenderTargetView( this->DepthRenderTarget, ClearColor );
 	d3d11DevCon.OMSetBlendState( this->ShaderManager.D3dDepthTestsBlendState.p, 0, 0xffffffff );

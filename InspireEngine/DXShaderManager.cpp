@@ -70,7 +70,7 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 		textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
 		DXCALL(device->CreateTexture2D(&textureDesc, NULL, &mTexture));
 	*/
-
+	/*
 	// Describe the Sample State
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory( &sampDesc, sizeof( sampDesc ) );
@@ -82,10 +82,26 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = 2;// D3D11_FLOAT32_MAX;
+	*/
+	// Describe the Sample State
+	ID3D11SamplerState* samplerState;
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory( &sampDesc, sizeof( sampDesc ) );
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;// D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.MaxAnisotropy = D3D11_MAX_MAXANISOTROPY;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = 2;// D3D11_FLOAT32_MAX;
+
 
 	//Create the Sample State
-	hr = d3d11Device.CreateSamplerState( &sampDesc, &TexSamplerState );
+	hr = d3d11Device.CreateSamplerState( &sampDesc, &samplerState );
 
+	ID3D11SamplerStatePtr sampleStateTemp( samplerState );
+	this->TexSamplerState = sampleStateTemp;
 
 	ID3D11BlendState *d2dBlendState;
 
@@ -119,15 +135,16 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	ZeroMemory( &rtbd, sizeof( rtbd ) );
 
 	rtbd.BlendEnable = true;
-	rtbd.SrcBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	rtbd.DestBlend = D3D11_BLEND_SRC_ALPHA;
-	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
-	rtbd.SrcBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-	rtbd.DestBlendAlpha = D3D11_BLEND_SRC_ALPHA;
-	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	rtbd.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
 
-	blendDesc.AlphaToCoverageEnable = false;
+	rtbd.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.AlphaToCoverageEnable = true;
 	blendDesc.RenderTarget[ 0 ] = rtbd;
 
 	d3d11Device.CreateBlendState( &blendDesc, &transparency );
@@ -138,7 +155,6 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 
 
 	// Setup Depth Shader Blend
-// create blend state
 	ID3D11BlendState *d3dDepthTestsBlendState;
 	D3D11_BLEND_DESC stDesc;
 
@@ -154,26 +170,11 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	stDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_RED;
 
 	d3d11Device.CreateBlendState( &stDesc, &d3dDepthTestsBlendState );
+
 	ID3D11BlendStatePtr d3dDepthTestsBlendStatePtr( d3dDepthTestsBlendState );
 	this->D3dDepthTestsBlendState = d3dDepthTestsBlendStatePtr;
 
-	/*
-	// Setup Default Blend
-	D3D11_BLEND_DESC ltDesc;
 
-	ZeroMemory( &ltDesc, sizeof( D3D11_BLEND_DESC ) );
-
-	ltDesc.RenderTarget[ 0 ].BlendEnable = true;
-	ltDesc.RenderTarget[ 0 ].SrcBlend = D3D11_BLEND_ONE;
-	ltDesc.RenderTarget[ 0 ].DestBlend = D3D11_BLEND_ZERO;
-	ltDesc.RenderTarget[ 0 ].BlendOp = D3D11_BLEND_OP_ADD;
-	ltDesc.RenderTarget[ 0 ].SrcBlendAlpha = D3D11_BLEND_ONE;
-	ltDesc.RenderTarget[ 0 ].DestBlendAlpha = D3D11_BLEND_ZERO;
-	ltDesc.RenderTarget[ 0 ].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	ltDesc.RenderTarget[ 0 ].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	pd3dDevice->CreateBlendState( &ltDesc, &D3DDefaultBlendState );
-	*/
 	// Setup FullScreen Alpha Blend
 	ID3D11BlendState *d3dAlphadBlendState;
 
@@ -190,23 +191,76 @@ DXShaderManager::DXShaderManager( ID3D11Device &d3d11Device )
 	rtbdAlpha.SrcBlendAlpha = D3D11_BLEND_ONE;
 	rtbdAlpha.DestBlendAlpha = D3D11_BLEND_ZERO;
 	rtbdAlpha.BlendOpAlpha = D3D11_BLEND_OP_SUBTRACT;
-	rtbdAlpha.RenderTargetWriteMask = D3D10_COLOR_WRITE_ENABLE_ALL;
+	rtbdAlpha.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
 //	omDesc.AlphaToCoverageEnable = false;
 	omDesc.RenderTarget[ 0 ] = rtbdAlpha;
+
+	d3d11Device.CreateBlendState( &omDesc, &d3dAlphadBlendState );
+
 	ID3D11BlendStatePtr d3dAlphadBlendStateTemp( d3dAlphadBlendState );
 	this->D3dAlphaBlendState = d3dAlphadBlendStateTemp;
 
 
+	// Setup Default Blend
+	ID3D11BlendState *default;
 
+	D3D11_BLEND_DESC blendDescDefault;
+	ZeroMemory( &blendDescDefault, sizeof( blendDescDefault ) );
 
+	D3D11_RENDER_TARGET_BLEND_DESC rtbdDefault;
+	ZeroMemory( &rtbdDefault, sizeof( rtbdDefault ) );
+
+	rtbdDefault.BlendEnable = false;
+	rtbdDefault.SrcBlend = D3D11_BLEND_ONE;
+	rtbdDefault.DestBlend = D3D11_BLEND_ZERO;
+	rtbdDefault.BlendOp = D3D11_BLEND_OP_ADD;
+	rtbdDefault.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rtbdDefault.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rtbdDefault.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	rtbdDefault.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDescDefault.AlphaToCoverageEnable = false;
+	blendDescDefault.IndependentBlendEnable = false;
+	blendDescDefault.RenderTarget[ 0 ] = rtbdDefault;
+	
+	d3d11Device.CreateBlendState( &blendDescDefault, &default );
+	
+	ID3D11BlendStatePtr DefaultTemp( default );
+	this->InspireDefault = DefaultTemp;
+	
+
+	D3D11_DEPTH_STENCIL_DESC dssDesc;
+	ZeroMemory( &dssDesc, sizeof( D3D11_DEPTH_STENCIL_DESC ) );
+	dssDesc.DepthEnable = true;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+
+	d3d11Device.CreateDepthStencilState( &dssDesc, &this->DSLessEqual );
+
+	D3D11_RASTERIZER_DESC cmdesc;
+
+	ZeroMemory( &cmdesc, sizeof( D3D11_RASTERIZER_DESC ) );
+	cmdesc.FillMode = D3D11_FILL_SOLID;
+	cmdesc.FrontCounterClockwise = false;
+	cmdesc.CullMode = D3D11_CULL_NONE;
+	//cmdesc.FillMode = D3D11_FILL_WIREFRAME;
+
+	hr = d3d11Device.CreateRasterizerState( &cmdesc, &this->RSCullNone );
 }
 
 DXShaderManager::~DXShaderManager( )
 {
-	cbPerFrameBuffer.Release( );
-	cbPerObjectBuffer.Release( );
-	cbPerObjectBufferInstanced.Release( );
+	this->cbPerFrameBuffer.Release( );
+	this->cbPerObjectBuffer.Release( );
+	this->cbPerObjectBufferInstanced.Release( );
 
-	Transparency.Release( );
+	this->DSLessEqual->Release( );
+	this->RSCullNone->Release( );
+
+	this->Transparency.Release( );
+	this->D2dTransparency.Release( );
+	this->D3dAlphaBlendState.Release( );
+	this->D3dDepthTestsBlendState.Release( );
+	this->InspireDefault.Release( );
 }

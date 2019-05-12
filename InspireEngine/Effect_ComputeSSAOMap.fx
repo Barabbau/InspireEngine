@@ -45,11 +45,11 @@ float4 PS( PS_INPUT input )		: SV_Target0
 	//return float4( 1, 1, 0, 0.6f);
 	// Constants
 	int		iterations			= 10;
-    float	maxdist = 0.35;// 1.0;// 0.35;
+    float	maxdist = 0.15;// 1.0;// 0.35;
 	float	finalColor			= 0.0f;
 	float	sampleDepth			= 0;
 	float	distance			= 0;
-	float farClip = 1000.0f;
+	float farClip = distanceScale.b;
 
 	float4	samples[ 10 ] =
 	{
@@ -93,7 +93,7 @@ float4 PS( PS_INPUT input )		: SV_Target0
 
 		sampleDepth /= farClip;
 		sampleDepth	= 1.0 - sampleDepth;
-		if ( sampleDepth < 0.01)
+		if ( sampleDepth < 0.01 )
 		{
 			return						float4( 0, 0, 0, 1.0 );
 		}
@@ -108,7 +108,7 @@ float4 PS( PS_INPUT input )		: SV_Target0
 		else
 		{
 			float	sstep = 1.0 - smoothstep( 0.0, maxdist, step );
-			float	occlusion = sstep * distanceScale.x * max( -distance, 0.0f );
+			float	occlusion = sstep * distanceScale.r * max( -distance, 0.0f );
 
 			finalColor += ( 1.0f / ( 1.0f + occlusion * occlusion ) );
 		}
@@ -116,5 +116,5 @@ float4 PS( PS_INPUT input )		: SV_Target0
 
 	float	greyScaleColor		= clamp( ( finalColor / iterations ), 0.0 ,1.0 );
 
-	return						float4( 0, 0, 0, greyScaleColor );
+	return						float4( 0, 0, 0, 1.0 - greyScaleColor );
 }

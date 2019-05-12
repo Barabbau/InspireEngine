@@ -52,16 +52,26 @@ class SceneGraph
 		EditorMeshPtr bBox,
 	bool isInstanced = false );
 
+	void SceneGraph::CalculateLods(
+		XMVECTOR cameraPosition,
+		XMVECTOR cameraForward );
+
+	void SceneGraph::RenderDepth(
+		ID3D11DeviceContext &d3d11DevCon,
+		XMMATRIX viewProjection,
+		DXShader &shader,
+		std::vector<SurfaceMaterial> &materialsList,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager );
+
 	void Render(
-	ID3D11DeviceContext &d3d11DevCon,
-	XMMATRIX viewProjection,
-	std::vector<SurfaceMaterial> &materialsList,
-	std::vector<EditorMeshPtr> &lstEditorObject3Ds,
-	DXShaderManager &shaderManager,
-	XMVECTOR cameraPosition,
-	XMVECTOR cameraForward,
-	Light &light );
-	void RenderInstanced( XMMATRIX ViewPerspective );
+		ID3D11DeviceContext &d3d11DevCon,
+		XMMATRIX viewProjection,
+		std::vector<SurfaceMaterial> &materialsList,
+		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
+		DXShaderManager &shaderManager,
+		Light &light );
+		void RenderInstanced( XMMATRIX ViewPerspective );
 
 	XMFLOAT3 RootPosition;
 	XMFLOAT3 RootRotation;

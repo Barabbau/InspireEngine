@@ -64,6 +64,7 @@ class EditorMesh
 		ID3D11DeviceContext &d3d11DevCon,
 		XMMATRIX viewProjection,
 		DXShader &shader,
+		std::vector<SurfaceMaterial> &materialsList,
 		std::vector<EditorMeshPtr> &lstEditorObject3Ds,
 		DXShaderManager &shaderManager );
 

@@ -179,7 +179,12 @@ bool InspireUtils::ReadMaterialIdName(
 					break;
 			}
 
-			newMaterial.transparent = false;
+			std::string transparency_char = strLineName.substr( strLineName.size( ) - 2, 2 );
+			//std::string debugOutputStringTChar = "Transparency char : " + transparency_char + '\n';
+			//std::wstring debugOutputTChar;
+			//StringToWString( debugOutputTChar, debugOutputStringTChar );
+			//OutputDebugString( debugOutputTChar.c_str( ) );
+			newMaterial.transparent = transparency_char._Equal( "_t" );// false;
 
 			materialsList.push_back( newMaterial );
 		}

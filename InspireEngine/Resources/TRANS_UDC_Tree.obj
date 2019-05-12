@@ -1751,7 +1751,7 @@ vt -1.000000000000 1.000000000000 0.000000000000
 # 9 texture coords
 
 g TRANS_UDC_Tree
-usemtl Prop_Leaf
+usemtl Prop_Leaf_T
 s 1
 f 1/1/1 2/2/2 3/3/3 
 f 3/3/3 2/2/2 4/4/4 

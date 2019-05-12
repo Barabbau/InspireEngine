@@ -51,10 +51,13 @@ class SsaoManager
 
 	typedef CComPtr<ID3D11Buffer> ID3D11BufferPtr;
 
-	void Draw( ID3D11Device  &d3d11Device,
-						ID3D11DeviceContext &d3d11DevCon,
-						float width,
-						float height );
+	void Draw( 
+		ID3D11Device  &d3d11Device,
+		ID3D11DeviceContext &d3d11DevCon,
+		float nearClip,
+		float farClip,
+		float width,
+		float height );
 
 	HRESULT Intialize(
 		ID3D11Device  &d3d11Device,
@@ -70,8 +73,9 @@ class SsaoManager
 		float height );
 	
 	void SetupDepthRenderTarget(
-		ID3D11Device  &d3d11Device,
-		ID3D11DeviceContext &d3d11DevCon );
+			ID3D11Device  &d3d11Device,
+			ID3D11DeviceContext &d3d11DevCon,
+			float farClip );
 
 	// Full Screen Quad Resources
 	ID3D11BufferPtr			ScreenIndexBuffer = nullptr;

@@ -10104,9 +10104,9 @@ f 4909/2348/352 4910/2348/353 4911/2348/352
 f 4911/2348/352 4912/2348/354 4909/2348/352
 
 #
-#  Mesh Mesh Mesh Mesh_ Mesh Mesh Mesh_ Mesh Mesh_ Mesh__Mat_Foliage
+#  Mesh Mat_Foliage
 #
-usemtl Prop_ClimbingPlant
+usemtl Prop_ClimbingPlant_T
 
 v 10.264724 -0.032958 -4.393910
 v 10.264720 -0.032958 -0.642434
