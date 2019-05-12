@@ -38,6 +38,10 @@ PS_INPUT VS(VS_INPUT input)
     return Out;
 }
 
+float rand( float2 co )
+{
+	return frac( sin( dot( co.xy, float2( 12.9898, 78.233 ) ) ) * 43758.5453 );
+}
 
 // Saves the depth value out to the 32bit floating point texture
 float4 PS( PS_INPUT input )		: SV_Target0
@@ -45,11 +49,14 @@ float4 PS( PS_INPUT input )		: SV_Target0
 	//return float4( 1, 1, 0, 0.6f);
 	// Constants
 	int		iterations			= 10;
-    float	maxdist = 0.15;// 1.0;// 0.35;
+
 	float	finalColor			= 0.0f;
 	float	sampleDepth			= 0;
 	float	distance			= 0;
+	float	maxdist = sampleRadius.g;
+	float nearClip = distanceScale.g;
 	float farClip = distanceScale.b;
+
 
 	float4	samples[ 10 ] =
 	{
@@ -73,35 +80,35 @@ float4 PS( PS_INPUT input )		: SV_Target0
 	};
 
 	float	depth = myDepthMap.Sample( samLinear, input.TexCoord ).r;
+	depth /= farClip;
+	depth = 1.0 - depth;
 
 	float2	normalTexCoord = input.TexCoord.xy * float2( 200.0, 200.0 );
 	float3	randNormal = randomNoiseMap.Sample( samLinear, normalTexCoord ).rgb;
 
-	depth /= farClip;
-	depth = 1.0 - depth;
-
-
 	for ( int i = 0; i < iterations; i++ )
 	{
-		float3	ray				= reflect( samples[ i ].xyz, randNormal ) * sampleRadius.x;
+		float3	ray = reflect( samples[ i ].xyz, randNormal ) * sampleRadius.x;
 
-		input.TexCoord.x		+= abs( ray.x ) * ( 0.75 - input.TexCoord.x * 0.5 ) * 2;
-		input.TexCoord.y		+= abs( ray.y ) * ( 0.75 - input.TexCoord.y * 0.5 ) * 2;
-		saturate( input.TexCoord );
+		input.TexCoord.x += ray * ( 0.75 - input.TexCoord.x * 0.5 ) * 2;
+		input.TexCoord.y += ray * ( 0.75 - input.TexCoord.y * 0.5 ) * 2;
 
-		sampleDepth				= myDepthMap.Sample( samLinear, input.TexCoord ).r;
+		//input.TexCoord = saturate( input.TexCoord );
 
+		sampleDepth	= myDepthMap.Sample( samLinear, input.TexCoord ).r;
 		sampleDepth /= farClip;
 		sampleDepth	= 1.0 - sampleDepth;
-		if ( sampleDepth < 0.01 )
+
+		if ( sampleDepth < nearClip )
 		{
 			return						float4( 0, 0, 0, 1.0 );
 		}
+
 		distance				= depth - sampleDepth;
 
 		float	step			= abs( distance );
 
-		if ( sampleDepth == 1.0 || step > maxdist )
+		if ( sampleDepth == 1.0 )// || step > maxdist )
 		{
 			finalColor++;
 		}

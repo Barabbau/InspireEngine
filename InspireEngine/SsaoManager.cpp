@@ -203,11 +203,15 @@ void SsaoManager::Draw( ID3D11Device  &d3d11Device,
 
 	XMStoreFloat4x4( &shaderParameters.worldMatrix, XMMatrixTranspose( projectionWorldMatrix ) );
 
-	XMVECTOR testDistScale = XMVectorSet( 320.0f, nearClip, farClip, 100.0f ); //320.0f, 100.0f, 100.0f, 100.0f );
+	// max distance, clip planes
+	XMVECTOR testDistScale = XMVectorSet( 920.0f, nearClip, farClip, 100.0f ); //320.0f, 100.0f, 100.0f, 100.0f );
 	XMStoreFloat4( &shaderParameters.distanceScale, testDistScale );
 
 	// defines the max UV shift for the SSAO iteration samples
-	XMVECTOR testRadius = XMVectorSet( 0.0055f, 0.35f, 0.35f, 0.35f );
+	//float shift = 0.0f;// ( ( rand( ) % 100 ) / 100.0 );
+
+	// occlusion scaler, max value
+	XMVECTOR testRadius = XMVectorSet( 0.0065f, 0.35f, 0.0, 0.0 );
 	XMStoreFloat4( &shaderParameters.sampleRadius, testRadius );
 
 
